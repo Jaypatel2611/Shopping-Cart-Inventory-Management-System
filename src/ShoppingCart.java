@@ -1,121 +1,124 @@
-import java.util.*;
-import java.sql.*;
-class User extends ShoppingCart
-{
-    //int id;
-    String name;
-    String phoneno;
-    String email;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.Scanner;
+
+class User {
+    String firstName;
+    String lastName;
+    String userName;
     String password;
     String role;
-    Connection con;
-    String ans;
-    String adminpassword = "admin@123";
 
-
-    public User(String name, String phoneno, String email, String password,String role,Connection con,String ans) throws SQLException {
-        //this.id = id;
-        this.name = name;
-        this.phoneno = phoneno;
-        this.email = email;
+    public User(String firstName, String lastName, String userName, String password, String role) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.userName = userName;
         this.password = password;
         this.role = role;
-        this.con = con;
-        this.ans = ans;
-
-        if(role.equals("admin"))
-        {
-            if(ans.equalsIgnoreCase("no")) {
-                String insert = "Insert into admin(name,email,phone,password) values(?,?,?,?)";
-                PreparedStatement ps = con.prepareStatement(insert);
-                ps.setString(1, name);
-                ps.setString(2, phoneno);
-                ps.setString(3, email);
-                ps.setString(4, password);
-                ps.executeUpdate();
-                System.out.println("sign-up Successfully");
-            }
-            else
-            {
-                System.out.println("Signin Successfully");
-            }
-
-        }
-        else if (role.equals("customer"))
-        {
-            if(ans.equalsIgnoreCase("no")) {
-                String insert = "Insert into customer(customer_name,customer_email,customer_phoneno,customer_password) values(?,?,?,?)";
-                PreparedStatement ps = con.prepareStatement(insert);
-                ps.setString(1, name);
-                ps.setString(2, phoneno);
-                ps.setString(3, email);
-                ps.setString(4, password);
-                ps.executeUpdate();
-            }
-            else
-            {
-                System.out.println("Signin Successfully");
-            }
-
-        }
-        else
-        {
-            System.out.println("invalid role");
-
+    }
+}
+class User_Management {
+    static Connection con;
+    static User user;
+    static {
+        try {
+            con = DriverManager.getConnection(
+                    "jdbc:mysql://localhost:3307/myjdbc_2025?allowPublicKeyRetrieval=true&useSSL=false",
+                    "jay_mysql",
+                    "pass"
+            );
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
+    Scanner sc = new Scanner(System.in);
 
-}
-class Admin
-{
-    // adding product in database
-}
-class Customer
-{
+    public void addUser() throws SQLException {
+        System.out.print("Enter First Name : ");
+        String firstName = sc.next();
+        System.out.print("Enter Last Name : ");
+        String lastName = sc.next();
+        System.out.print("Enter userName : ");
+        String userName = sc.next();
+        System.out.print("Enter Password : ");
+        String password = sc.next();
+        System.out.print("Enter Role : ");
+        String role = sc.next();
 
-}
-public class ShoppingCart {
-    public static void main(String[] args) throws Exception {
-        Scanner sc = new Scanner(System.in);
-        String dburl = "jdbc:mysql://localhost:3306/shopping_system";
-        String dbuser = "root";
-        String dbpass = "";
-        String driver = "com.mysql.cj.jdbc.Driver";
-        Class.forName(driver);
-        Connection con = DriverManager.getConnection(dburl,dbuser,dbpass);
-        System.out.println(" By Admin or Customer");
-        String choice = sc.next().toLowerCase();
-        if(choice.equalsIgnoreCase("admin"))
-        {
-            System.out.println("Enter Admin Password - ");
-            String pass = sc.next();
-            if(pass.equalsIgnoreCase("admin@123"))
-            {
-                System.out.println("Correct password");
-            }
-            else {
-                System.out.println("Incorrect password");
-            }
-        }
-        System.out.println("Already have account ?(yes/no)");
-        String ans = sc.next();
-        if(ans.equalsIgnoreCase("no")) {
-            System.out.println("Enter Name - ");
-            String Name = sc.nextLine();
-            sc.nextLine();
-            System.out.println("Enter Phone Number - ");
-            String number = sc.next();
-            sc.nextLine();
-            System.out.println("Enter your Email - ");
-            String email = sc.next();
-            sc.nextLine();
-            System.out.println("Enter password - ");
-            String password = sc.next();
-
-
-            User u = new User(Name, number, email, password, choice, con, ans);
+        String insertUser = "INSERT (firstName,lastName,userName,password,role) INTO user VALUES(?,?,?,?,?)";
+        try (PreparedStatement insertStmt = con.prepareStatement(insertUser)) {
+            insertStmt.setString(1, firstName);
+            insertStmt.setString(2, lastName);
+            insertStmt.setString(3, userName);
+            insertStmt.setString(4, password);
+            insertStmt.setString(5, role);
+            insertStmt.executeUpdate();
         }
 
+        user = new User(firstName, lastName, userName, password, role);
+        System.out.println("✅ Signed Up Successfully");
+    }
+
+    public void updateUserDetails() throws SQLException {
+        System.out.println("1.FirstName\n2.LastName\n3.UserName\n4.Password\n5.EXIT\n\nEnter your Choice : ");
+        int choice = sc.nextInt();
+        switch (choice) {
+            case 1:
+                System.out.print("Enter new FirstName : ");
+                String newFirstName = sc.next();
+                user.firstName = newFirstName;
+                String updateFirstName = "INSERT firstName INTO user VALUES(?)";
+                try (PreparedStatement updateStmt = con.prepareStatement(updateFirstName)) {
+                    updateStmt.setString(1,updateFirstName);
+                    updateStmt.executeUpdate();
+                }
+                System.out.println("✅ First Name Updated Successfully");
+                break;
+            case 2:
+                System.out.print("Enter new LastName : ");
+                String newLastName = sc.next();
+                user.lastName = newLastName;
+                String updateLastName = "INSERT lastName INTO user VALUES(?)";
+                try (PreparedStatement updateStmt = con.prepareStatement(updateLastName)) {
+                    updateStmt.setString(1,updateLastName);
+                    updateStmt.executeUpdate();
+                }
+                System.out.println("✅ Last Name Updated Successfully");
+                break;
+            case 3:
+                System.out.print("Enter new UserName : ");
+                String newUserName = sc.next();
+                user.firstName = newUserName;
+                String updateUserName = "INSERT firstName INTO user VALUES(?)";
+                try (PreparedStatement updateStmt = con.prepareStatement(updateUserName)) {
+                    updateStmt.setString(1,updateUserName);
+                    updateStmt.executeUpdate();
+                }
+                System.out.println("✅ User Name Updated Successfully");
+                break;
+            case 4:
+                System.out.print("Enter new Password : ");
+                String newPassword = sc.next();
+                user.firstName = newPassword;
+                String updatePassword = "INSERT firstName INTO user VALUES(?)";
+                try (PreparedStatement updateStmt = con.prepareStatement(updatePassword)) {
+                    updateStmt.setString(1,updatePassword);
+                    updateStmt.executeUpdate();
+                }
+                System.out.println("✅ First Name Updated Successfully");
+                break;
+            case 5:
+                System.out.println("EXITING");
+                break;
+            default:
+                System.out.println("Invalid Choice");
+        }
+    }
+}
+class ShoppingCart {
+    public static void main(String[] args) {
 
     }
 }
