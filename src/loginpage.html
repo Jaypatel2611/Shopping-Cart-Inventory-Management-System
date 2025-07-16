@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Register New User</title>
+    <style>
+        body {
+          font-family: Arial, sans-serif;
+          background: #f0f2f5;
+          display: flex;
+          justify-content: center;
+          align-items: flex-start;
+          height: 100vh;
+          margin: 0;
+          padding-top: 50px;
+        }
+        .container {
+          background: white;
+          padding: 30px 40px;
+          box-shadow: 0 0 12px rgba(0,0,0,0.1);
+          border-radius: 6px;
+          width: 380px;
+        }
+        .container h2 {
+          text-align: center;
+          margin-bottom: 25px;
+          color: #333;
+        }
+        label {
+          display: block;
+          margin-bottom: 6px;
+          font-weight: bold;
+          color: #555;
+        }
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        input[type="tel"] {
+          width: 100%;
+          padding: 10px 12px;
+          margin-bottom: 15px;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+          box-sizing: border-box;
+          font-size: 14px;
+          transition: border-color 0.3s;
+        }
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="password"]:focus,
+        input[type="tel"]:focus {
+          border-color: #007bff;
+          outline: none;
+        }
+        .role-group {
+          margin-bottom: 20px;
+        }
+        .role-group label {
+          font-weight: normal;
+          margin-right: 15px;
+          color: #555;
+        }
+        button {
+          width: 100%;
+          padding: 12px;
+          background-color: #007bff;
+          border: none;
+          border-radius: 4px;
+          color: white;
+          font-weight: bold;
+          font-size: 16px;
+          cursor: pointer;
+          transition: background-color 0.3s;
+        }
+        button:hover {
+          background-color: #0056b3;
+        }
+        .error-message {
+          color: red;
+          font-size: 13px;
+          margin-bottom: 15px;
+          display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Register New User</h2>
+    <form id="registrationForm" novalidate>
+        <div class="error-message" id="errorMsg"></div>
+        <label for="name">Name</label>
+        <input type="text" id="name" name="name" placeholder="Enter your name" required />
+
+        <label for="phone">Phone</label>
+        <input type="tel" id="phone" name="phone" placeholder="Enter your phone number" required pattern="^\+?[0-9\s\-]{7,15}$" />
+
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" placeholder="Enter your email" required />
+
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="Enter password" required minlength="6" />
+
+        <div class="role-group">
+            <label><input type="radio" name="role" value="customer" checked /> Customer</label>
+            <label><input type="radio" name="role" value="admin" /> Admin</label>
+        </div>
+
+        <button type="submit">Register</button>
+    </form>
+</div>
+
+<script>
+    const form = document.getElementById("registrationForm");
+    const errorMsg = document.getElementById("errorMsg");
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      errorMsg.style.display = "none";
+      errorMsg.textContent = "";
+
+      const name = form.name.value.trim();
+      const phone = form.phone.value.trim();
+      const email = form.email.value.trim();
+      const password = form.password.value;
+      const role = form.role.value;
+
+      // Basic client side validations
+      if (!name || !phone || !email || !password) {
+        showError("Please fill in all fields.");
+        return;
+      }
+      if (!validateEmail(email)) {
+        showError("Please enter a valid email address.");
+        return;
+      }
+      if (password.length < 6) {
+        showError("Password must be at least 6 characters.");
+        return;
+      }
+      if (!validatePhone(phone)) {
+        showError("Please enter a valid phone number.");
+        return;
+      }
+
+      if (role === "admin") {
+        const adminPassword = prompt("Enter the admin creation password:");
+        if (!adminPassword || adminPassword.toLowerCase() !== "admin@123") {
+          alert("Incorrect admin creation password.");
+          return;
+        }
+      }
+
+      // Now submit form data to backend API (replace URL with your server api)
+
+      fetch("/register", { // <-- You'll need a server endpoint like this
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, phone, email, password, role })
+      })
+      .then(res => {
+        if (!res.ok) {
+          return res.json().then(data => Promise.reject(data.message || "Registration failed"));
+        }
+        return res.json();
+      })
+      .then(data => {
+        alert("Registration successful!");
+        form.reset();
+      })
+      .catch(errMsg => {
+        showError(errMsg);
+      });
+    });
+
+    function showError(msg) {
+      errorMsg.textContent = msg;
+      errorMsg.style.display = "block";
+    }
+
+    function validateEmail(email) {
+      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return re.test(email.toLowerCase());
+    }
+
+    function validatePhone(phone) {
+      const re = /^\+?[0-9\s\-]{7,15}$/;
+      return re.test(phone);
+    }
+</script>
+
+</body>
+</html>
