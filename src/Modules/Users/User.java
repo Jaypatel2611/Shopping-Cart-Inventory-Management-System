@@ -1,24 +1,38 @@
 package Modules.Users;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.HashMap;
+
 public class User {
+    static HashMap<Integer, User> loggedInUser = new HashMap<>();
+    
+    int id;
     String firstName;
     String lastName;
     String userName;
     String password;
     String mobileNo;
     String email;
+    String role;
 
-    public User(String firstName, String lastName, String userName, String password, String email, String mobileNo) {
+    public User(int id, String firstName, String lastName, String userName, String password, String email, String mobileNo, String role) {
+        this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
         this.userName = userName;
         this.password = password;
         this.mobileNo = mobileNo;
         this.email = email;
+        this.role = role;
     }
 
-    public static void addLoggedInUser() {
-        // TODO : add user to the arraylist
+    public static void addLoggedInUser(ResultSet userData) throws SQLException {
+        loggedInUser.put(userData.getInt("id"), new User(userData.getInt("id"), userData.getString("firstName"), userData.getString("lastName"), userData.getString("userName"), userData.getString("password"), userData.getString("email"), userData.getString("mobileno"), userData.getString("role")));
+    }
+
+    public static User getUserById(int id) {
+        return loggedInUser.get(id);
     }
 
     public String getFirstName() {
@@ -69,8 +83,7 @@ public class User {
         this.email = email;
     }
 
-    // TODO : Change void to return type
-    public void getUserById(int id) {
-        // TODO : fetch details of user by id from arrayList
+    public String getRole() {
+        return role;
     }
 }

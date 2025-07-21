@@ -270,7 +270,6 @@ public class CustomerManagement {
     }
 
     public static void start(User loggedInUser) {
-//        Customer customer = new Customer(loggedInUser);
         Scanner sc = new Scanner(System.in);
 
         while (true) {
@@ -285,7 +284,7 @@ public class CustomerManagement {
             System.out.print("Choose an option (1-7): ");
 
             int choice = sc.nextInt();
-            sc.nextLine(); // Database.getCon()sume newline
+            sc.nextLine(); // Database.getCon()some newline
 
             try {
                 switch (choice) {

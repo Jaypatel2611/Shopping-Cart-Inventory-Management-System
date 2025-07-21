@@ -82,6 +82,8 @@ public class Auth {
                 System.out.println("   → At least one digit");
                 System.out.println("   → At least one special character (!@#$%^&* etc.)");
             }
+
+
         }
 
         String insertUser = "INSERT INTO user(firstName,lastName,userName,password,role) VALUES(?,?,?,?,?)";
@@ -90,13 +92,13 @@ public class Auth {
             insertStmt.setString(2, lastName);
             insertStmt.setString(3, userName);
             insertStmt.setString(4, password);
+            insertStmt.setString(5, "user");
             insertStmt.executeUpdate();
         }
-
         System.out.println("✅ Signed Up Successfully");
     }
 
-    public void userLogin() throws SQLException {
+    public int userLogin() throws SQLException {
         System.out.print("Enter userName : ");
         String userName = sc.next();
         System.out.print("Enter Password : ");
@@ -112,12 +114,13 @@ public class Auth {
                 String fetchedPassword = rs.getString("password");
                 if (password.equals(fetchedPassword)) {
                     System.out.println("✅ Logged In Successfully");
-                    // TODO : add a heterogeneous primitive data type to add user
-                    User.addLoggedInUser();
+                    User.addLoggedInUser(rs);
+                    return rs.getInt("id");
                 } else {
                     System.out.println("❌ Invalid Credentials");
                 }
             }
         }
+        return 0;
     }
 }

@@ -1,4 +1,6 @@
 import Modules.Auth.Auth;
+import Modules.Users.CustomerManagement.CustomerManagement;
+import Modules.Users.User;
 
 import java.sql.SQLException;
 import java.util.Scanner;
@@ -25,7 +27,18 @@ public class Main {
                         break;
                     case 2:
                         System.out.println("🔓 Login selected.");
-                        auth.userLogin();
+                        int userId = auth.userLogin();
+
+                        if (User.getUserById(userId) != null) {
+                            if (User.getUserById(userId).getRole().equalsIgnoreCase("admin")) {
+                                // AdminManagement.main(args);
+                            } else {
+                                CustomerManagement.start(User.getUserById(userId));
+                            }
+                        } else {
+                            System.out.println("❌ Login failed. Invalid credentials.");
+                        }
+
                         /* TODO : add logic for multiple user login and role management
                            User user = auth.getUser();
                         if (user != null) {
