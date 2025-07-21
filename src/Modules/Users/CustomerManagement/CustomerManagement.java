@@ -1,35 +1,24 @@
-package Customer;
+package Modules.Users.CustomerManagement;
 
-import Address.Address;
-import Model.User;
+import Database.Database;
+import Modules.Address.Address;
+import Modules.Users.User;
 
-import java.sql.*;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Scanner;
-class Customer {
-    Model.User user;
-    Scanner sc =new Scanner(System.in);
-    static Connection con;
-    static {
-        try {
-            con = DriverManager.getConnection(
-                    "jdbc:mysql://localhost:3307/myjdbc_2025?allowPublicKeyRetrieval=true&useSSL=false",
-                    "jay_mysql",
-                    "pass"
-            );
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
-    public Customer(Model.User user) {
-        this.user = user;
-    }
+public class CustomerManagement {
 
-    private void addAddress() throws SQLException {
-        System.out.println("Enter Address In formatted way ");
-        System.out.println("Enter Address Line 1 : ");
+    static User user;
+    static Scanner sc = new Scanner(System.in);
+
+    private static void addAddress() throws SQLException {
+        System.out.println("Enter Modules.Address In formatted way ");
+        System.out.println("Enter Modules.Address Line 1 : ");
         String addressLine1 = sc.nextLine();
-        System.out.println("Enter Address Line 2 : ");
+        System.out.println("Enter Modules.Address Line 2 : ");
         String addressLine2 = sc.nextLine();
         System.out.println("Enter Area : ");
         String area = sc.nextLine();
@@ -40,10 +29,10 @@ class Customer {
         System.out.println("Enter Pin code : ");
         int pinCode = sc.nextInt();
 
-        Address add = new Address(user.getFirstName(),addressLine1,addressLine2,area,city,state,pinCode,user);
+        Address add = new Address(user.getFirstName(), addressLine1, addressLine2, area, city, state, pinCode, user);
     }
 
-    private void payment() {
+    private static void payment() throws InterruptedException {
         System.out.println("1.Cash On Delivery\n2.Pay Online\n\nSelect Mode of Payment : ");
         int payMode = sc.nextInt();
         sc.nextLine(); // clear the newline character after nextInt()
@@ -51,14 +40,15 @@ class Customer {
         switch (payMode) {
             case 1:
                 System.out.println("✅ You have selected *Cash On Delivery*.");
-                System.out.println("📦 Your order will be placed and shipped soon!");
+                System.out.println("📦 Your order will be placed successfully and shipped soon!");
                 // Place order logic for COD here
                 break;
 
             case 2:
                 System.out.println("💳 You have selected *Pay Online*.");
-                System.out.println("Redirecting to online payment gateway...");
-                // Call your payment method here, e.g., payOnline();
+                System.out.println("🔐 Redirecting to payment gateway...");
+                Thread.sleep(10000);
+                // TODO: add online payment method
                 break;
 
             default:
@@ -68,12 +58,12 @@ class Customer {
         }
     }
 
-    public void searchProduct() throws SQLException {
+    private static void searchProduct() throws SQLException {
         System.out.print("Enter Product Name : ");
         String productName = sc.nextLine().toLowerCase();
 
         String fetchProduct = "SELECT productName , description , Price FROM Product WHERE productName = ?";
-        try (PreparedStatement insertStmt = con.prepareStatement(fetchProduct)) {
+        try (PreparedStatement insertStmt = Database.getCon().prepareStatement(fetchProduct)) {
             insertStmt.setString(1, productName);
             ResultSet rs = insertStmt.executeQuery();
 
@@ -94,21 +84,21 @@ class Customer {
         }
     }
 
-    public void viewCategories() {
+    private static void viewCategories() {
 
     }
 
-    public void profileManagement() throws SQLException {
-        System.out.println("1.FirstName\n2.LastName\n3.UserName\n4.Password\n5. Add Address\n6.EXIT\n\nEnter your Choice : ");
+    private static void profileManagement() throws SQLException {
+        System.out.println("1.FirstName\n2.LastName\n3.UserName\n4.Password\n5. Add Modules.Address\n6.EXIT\n\nEnter your Choice : ");
         int choice = sc.nextInt();
         switch (choice) {
             case 1:
                 System.out.print("Enter new FirstName : ");
                 String newFirstName = sc.next();
                 String updateFirstName = "UPDATE user SET firstName = ? WHERE userName = ?";
-                try (PreparedStatement updateStmt = con.prepareStatement(updateFirstName)) {
-                    updateStmt.setString(1,newFirstName);
-                    updateStmt.setString(2,user.getUserName());
+                try (PreparedStatement updateStmt = Database.getCon().prepareStatement(updateFirstName)) {
+                    updateStmt.setString(1, newFirstName);
+                    updateStmt.setString(2, user.getUserName());
                     updateStmt.executeUpdate();
                 }
                 System.out.println("✅ First Name Updated Successfully");
@@ -118,8 +108,8 @@ class Customer {
                 System.out.print("Enter new LastName : ");
                 String newLastName = sc.next();
                 String updateLastName = "UPDATE user SET lastName = ? WHERE userName = ?";
-                try (PreparedStatement updateStmt = con.prepareStatement(updateLastName)) {
-                    updateStmt.setString(1,newLastName);
+                try (PreparedStatement updateStmt = Database.getCon().prepareStatement(updateLastName)) {
+                    updateStmt.setString(1, newLastName);
                     updateStmt.setString(2, user.getLastName());
                     updateStmt.executeUpdate();
                 }
@@ -130,8 +120,8 @@ class Customer {
                 System.out.print("Enter new UserName : ");
                 String newUserName = sc.next();
                 String updateUserName = "UPDATE user SET userName = ? WHERE userName = ?";
-                try (PreparedStatement updateStmt = con.prepareStatement(updateUserName)) {
-                    updateStmt.setString(1,newUserName);
+                try (PreparedStatement updateStmt = Database.getCon().prepareStatement(updateUserName)) {
+                    updateStmt.setString(1, newUserName);
                     updateStmt.setString(2, user.getUserName());
                     updateStmt.executeUpdate();
                 }
@@ -142,8 +132,8 @@ class Customer {
                 System.out.print("Enter new Password : ");
                 String newPassword = sc.next();
                 String updatePassword = "UPDATE user SET password = ? WHERE userName = ?";
-                try (PreparedStatement updateStmt = con.prepareStatement(updatePassword)) {
-                    updateStmt.setString(1,newPassword);
+                try (PreparedStatement updateStmt = Database.getCon().prepareStatement(updatePassword)) {
+                    updateStmt.setString(1, newPassword);
                     updateStmt.setString(2, user.getPassword());
                     updateStmt.executeUpdate();
                 }
@@ -152,7 +142,7 @@ class Customer {
                 break;
             case 5:
                 addAddress();
-                System.out.println("✅ Address Added Successfully");
+                System.out.println("✅ Modules.Address Added Successfully");
                 break;
             case 6:
                 System.out.println("EXITING");
@@ -162,12 +152,12 @@ class Customer {
         }
     }
 
-    public void viewCart() throws SQLException {
-        String fetchCart = "SELECT p.productName, c.quantity, c.price "+
-                            "FROM cart c JOIN product p ON c.product_id = p.product_id " +
-                            "WHERE c.username = ?";
-        try (PreparedStatement fetchCartItems = con.prepareStatement(fetchCart)) {
-            fetchCartItems.setString(1,user.getUserName());
+    private static void viewCart() throws SQLException {
+        String fetchCart = "SELECT p.productName, c.quantity, c.price " +
+                "FROM cart c JOIN product p ON c.product_id = p.product_id " +
+                "WHERE c.username = ?";
+        try (PreparedStatement fetchCartItems = Database.getCon().prepareStatement(fetchCart)) {
+            fetchCartItems.setString(1, user.getUserName());
             ResultSet rs = fetchCartItems.executeQuery();
 
             System.out.println("\n----------- 🛒 Your Cart -----------");
@@ -211,16 +201,16 @@ class Customer {
         }
     }
 
-    private void checkOut() throws SQLException {
-        String fetchAddress = "SELECT name,address_line_1, address_line_2, area, city, state, pincode "+
-                                "FROM Address WHERE username = ?";
-        try (PreparedStatement fetchCartItems = con.prepareStatement(fetchAddress)) {
+    private static void checkOut() throws SQLException {
+        String fetchAddress = "SELECT name,address_line_1, address_line_2, area, city, state, pincode " +
+                "FROM Modules.Address WHERE username = ?";
+        try (PreparedStatement fetchCartItems = Database.getCon().prepareStatement(fetchAddress)) {
             fetchCartItems.setString(1, user.getUserName());
             ResultSet rs = fetchCartItems.executeQuery();
             boolean flag = true;
             boolean found = false;
 
-            while(rs.next()) {
+            while (rs.next()) {
                 String name = rs.getString("name");
                 String address1 = rs.getString("address_line_1");
                 String address2 = rs.getString("address_line_2");
@@ -229,44 +219,42 @@ class Customer {
                 String state = rs.getString("state");
                 int pincode = rs.getInt("pincode");
 
-                System.out.println("\n📦 Saved Address:");
+                System.out.println("\n📦 Saved Modules.Address:");
                 System.out.println("Name         : " + name);
-                System.out.println("Address Line1: " + address1);
-                System.out.println("Address Line2: " + address2);
+                System.out.println("Modules.Address Line1: " + address1);
+                System.out.println("Modules.Address Line2: " + address2);
                 System.out.println("Area         : " + area);
                 System.out.println("City         : " + city);
                 System.out.println("State        : " + state);
                 System.out.println("Pin Code     : " + pincode);
                 System.out.println("----------------------------------");
 
-                if(flag) {
+                if (flag) {
                     System.out.println("Want to Delivered to your default address");
                     String choice = sc.next();
-                    if(choice.equalsIgnoreCase("yes")) {
-                        System.out.println("✅ Delivery address confirmed.");
+                    if (choice.equalsIgnoreCase("yes")) {
+                        System.out.println("✅ Delivery address Database.getCon()firmed.");
                         break;
-                    }else {
-                        flag=false;
+                    } else {
+                        flag = false;
                     }
                 }
             }
             if (!found) {
                 System.out.println("❌ No address found. You can add a new address");
                 addAddress();
-                System.out.println("✅ Address Added Successfully");
+                System.out.println("✅ Modules.Address Added Successfully");
             }
         }
-        System.out.println("Choose your Address ID : ");
+        System.out.println("Choose your Modules.Address ID : ");
         int address_id = sc.nextInt();
-        System.out.println("Delivered to "+address_id);
+        System.out.println("Delivered to " + address_id);
         System.out.println("1.Proceed To Pay\n2.Back\n\nEnter your choice : ");
         int choice = sc.nextInt();
 
         switch (choice) {
             case 1:
-                // Proceed to payment logic
-                System.out.println("🔐 Redirecting to payment gateway...");
-                payment();
+//                payment();
                 break;
             case 2:
                 System.out.println("↩️ Returning to previous menu...");
@@ -277,16 +265,12 @@ class Customer {
         }
     }
 
-    public void viewOrders() {
+    public static void viewOrders() {
 
     }
 
-
-
-}
-public class CustomerManagement {
     public static void start(User loggedInUser) {
-        Customer customer = new Customer(loggedInUser);
+//        Customer customer = new Customer(loggedInUser);
         Scanner sc = new Scanner(System.in);
 
         while (true) {
@@ -296,36 +280,36 @@ public class CustomerManagement {
             System.out.println("3. 🛒 View Cart");
             System.out.println("4. 👤 Profile Management");
             System.out.println("5. 📦 My Orders");
-//            System.out.println("6. 💳 Wallet & Payments");
-            System.out.println("7. 🚪 Logout / Exit");
+            System.out.println("6. 🚪 Logout / Exit");
+            System.out.println("7. 💳 Back To Last Menu");
             System.out.print("Choose an option (1-7): ");
 
             int choice = sc.nextInt();
-            sc.nextLine(); // consume newline
+            sc.nextLine(); // Database.getCon()sume newline
 
             try {
                 switch (choice) {
                     case 1:
-                        customer.searchProduct();
+                        searchProduct();
                         break;
                     case 2:
-                        customer.viewCategories();
+                        viewCategories();
                         break;
                     case 3:
-                        customer.viewCart();
+                        viewCart();
                         break;
                     case 4:
-                        customer.profileManagement();
+                        profileManagement();
                         break;
                     case 5:
-                        customer.viewOrders();
+                        viewOrders();
                         break;
-                    /*case 6:
-                        customer.walletSection();
-                        break;*/
-                    case 7:
+                    case 6:
                         System.out.println("👋 Thank you for visiting! Goodbye.");
                         return;
+                    case 7:
+                        // TODO : implement logic for back menu
+                        break;
                     default:
                         System.out.println("❌ Invalid choice. Please enter between 1 and 7.");
                 }

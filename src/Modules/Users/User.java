@@ -1,4 +1,4 @@
-package Model;
+package Modules.Users;
 
 public class User {
     String firstName;
@@ -14,7 +14,11 @@ public class User {
         this.userName = userName;
         this.password = password;
         this.mobileNo = mobileNo;
-        this.email=email;
+        this.email = email;
+    }
+
+    public static void addLoggedInUser() {
+        // TODO : add user to the arraylist
     }
 
     public String getFirstName() {
@@ -63,5 +67,10 @@ public class User {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    // TODO : Change void to return type
+    public void getUserById(int id) {
+        // TODO : fetch details of user by id from arrayList
     }
 }

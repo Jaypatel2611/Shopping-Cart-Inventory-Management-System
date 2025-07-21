@@ -1,4 +1,4 @@
-package Address;
+package Modules.Address;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -25,7 +25,7 @@ public class Address {
     int PinCode;
     String Country;
 
-    public Address( String name,String addressLine1, String addressLine2, String area, String city, String state, int pinCode,Model.User user) throws SQLException {
+    public Address(String name, String addressLine1, String addressLine2, String area, String city, String state, int pinCode, Modules.Users.User user) throws SQLException {
         //User_id = user_id;
         AddressLine1 = addressLine1;
         AddressLine2 = addressLine2;
