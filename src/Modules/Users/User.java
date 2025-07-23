@@ -7,14 +7,16 @@ public class User {
     String password;
     String mobileNo;
     String email;
+    String role;
 
-    public User(String firstName, String lastName, String userName, String password, String email, String mobileNo) {
+    public User(String firstName, String lastName, String userName, String password, String email, String mobileNo,String role) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.userName = userName;
         this.password = password;
         this.mobileNo = mobileNo;
         this.email = email;
+        this.role = role;
     }
 
     public static void addLoggedInUser() {
@@ -69,8 +71,14 @@ public class User {
         this.email = email;
     }
 
+    public String getRole() {
+        return role;
+    }
+
+
     // TODO : Change void to return type
     public void getUserById(int id) {
         // TODO : fetch details of user by id from arrayList
+
     }
 }
