@@ -11,25 +11,39 @@ import java.util.Scanner;
 
 public class CustomerManagement {
 
-    static User user;
+    static User loggedInUser;
     static Scanner sc = new Scanner(System.in);
 
+    CustomerManagement(User loggedInUser) {
+        CustomerManagement.loggedInUser = loggedInUser;
+    }
+
     private static void addAddress() throws SQLException {
-        System.out.println("Enter Modules.Address In formatted way ");
-        System.out.println("Enter Modules.Address Line 1 : ");
+        System.out.println("Enter Address In formatted way:");
+
+        // Only flush newline if you called sc.nextInt() or sc.next() before this block
+        sc.nextLine(); // 🔄 flush leftover newline if any
+
+        System.out.print("Enter Address Line 1: ");
         String addressLine1 = sc.nextLine();
-        System.out.println("Enter Modules.Address Line 2 : ");
+
+        System.out.print("Enter Address Line 2: ");
         String addressLine2 = sc.nextLine();
-        System.out.println("Enter Area : ");
+
+        System.out.print("Enter Area: ");
         String area = sc.nextLine();
-        System.out.println("Enter City : ");
+
+        System.out.print("Enter City: ");
         String city = sc.nextLine();
-        System.out.println("Enter State : ");
+
+        System.out.print("Enter State: ");
         String state = sc.nextLine();
-        System.out.println("Enter Pin code : ");
+
+        System.out.print("Enter Pin Code: ");
         int pinCode = sc.nextInt();
 
-        Address add = new Address(user.getFirstName(), addressLine1, addressLine2, area, city, state, pinCode, user);
+
+        new Address(loggedInUser.getFirstName(), addressLine1, addressLine2, area, city, state, pinCode, loggedInUser);
     }
 
     private static void payment() throws InterruptedException {
@@ -47,7 +61,7 @@ public class CustomerManagement {
             case 2:
                 System.out.println("💳 You have selected *Pay Online*.");
                 System.out.println("🔐 Redirecting to payment gateway...");
-                Thread.sleep(10000);
+                Thread.sleep(5000);
                 // TODO: add online payment method
                 break;
 
@@ -89,60 +103,61 @@ public class CustomerManagement {
     }
 
     private static void profileManagement() throws SQLException {
-        System.out.println("1.FirstName\n2.LastName\n3.UserName\n4.Password\n5. Add Modules.Address\n6.EXIT\n\nEnter your Choice : ");
+        System.out.println("1.FirstName\n2.LastName\n3.UserName\n4.Password\n5. Add Address\n6.EXIT\n\nEnter your Choice : ");
         int choice = sc.nextInt();
         switch (choice) {
             case 1:
                 System.out.print("Enter new FirstName : ");
                 String newFirstName = sc.next();
-                String updateFirstName = "UPDATE user SET firstName = ? WHERE userName = ?";
+                String updateFirstName = "UPDATE users SET first_name = ? WHERE username = ?";
                 try (PreparedStatement updateStmt = Database.getCon().prepareStatement(updateFirstName)) {
                     updateStmt.setString(1, newFirstName);
-                    updateStmt.setString(2, user.getUserName());
+                    updateStmt.setString(2, loggedInUser.getUserName());
                     updateStmt.executeUpdate();
                 }
                 System.out.println("✅ First Name Updated Successfully");
-                user.setFirstName(newFirstName);
+                loggedInUser.setFirstName(newFirstName);
                 break;
             case 2:
                 System.out.print("Enter new LastName : ");
                 String newLastName = sc.next();
-                String updateLastName = "UPDATE user SET lastName = ? WHERE userName = ?";
+                String updateLastName = "UPDATE users SET last_name = ? WHERE userName = ?";
                 try (PreparedStatement updateStmt = Database.getCon().prepareStatement(updateLastName)) {
                     updateStmt.setString(1, newLastName);
-                    updateStmt.setString(2, user.getLastName());
+                    updateStmt.setString(2, loggedInUser.getLastName());
                     updateStmt.executeUpdate();
                 }
                 System.out.println("✅ Last Name Updated Successfully");
-                user.setLastName(newLastName);
+                loggedInUser.setLastName(newLastName);
                 break;
             case 3:
                 System.out.print("Enter new UserName : ");
                 String newUserName = sc.next();
-                String updateUserName = "UPDATE user SET userName = ? WHERE userName = ?";
+                String updateUserName = "UPDATE users SET username = ? WHERE username = ?";
                 try (PreparedStatement updateStmt = Database.getCon().prepareStatement(updateUserName)) {
                     updateStmt.setString(1, newUserName);
-                    updateStmt.setString(2, user.getUserName());
+                    updateStmt.setString(2, loggedInUser.getUserName());
                     updateStmt.executeUpdate();
                 }
                 System.out.println("✅ User Name Updated Successfully");
-                user.setUserName(newUserName);
+                loggedInUser.setUserName(newUserName);
                 break;
             case 4:
+                System.out.println(loggedInUser.getPassword());
                 System.out.print("Enter new Password : ");
                 String newPassword = sc.next();
-                String updatePassword = "UPDATE user SET password = ? WHERE userName = ?";
+                String updatePassword = "UPDATE users SET password = ? WHERE username = ?";
                 try (PreparedStatement updateStmt = Database.getCon().prepareStatement(updatePassword)) {
                     updateStmt.setString(1, newPassword);
-                    updateStmt.setString(2, user.getPassword());
+                    updateStmt.setString(2, loggedInUser.getUserName());
                     updateStmt.executeUpdate();
                 }
                 System.out.println("✅ Password Updated Successfully");
-                user.setPassword(newPassword);
+                loggedInUser.setPassword(newPassword);
                 break;
             case 5:
                 addAddress();
-                System.out.println("✅ Modules.Address Added Successfully");
+                System.out.println("✅ Address Added Successfully");
                 break;
             case 6:
                 System.out.println("EXITING");
@@ -152,12 +167,12 @@ public class CustomerManagement {
         }
     }
 
-    private static void viewCart() throws SQLException {
+    private static void viewCart() throws SQLException, InterruptedException {
         String fetchCart = "SELECT p.productName, c.quantity, c.price " +
                 "FROM cart c JOIN product p ON c.product_id = p.product_id " +
                 "WHERE c.username = ?";
         try (PreparedStatement fetchCartItems = Database.getCon().prepareStatement(fetchCart)) {
-            fetchCartItems.setString(1, user.getUserName());
+            fetchCartItems.setString(1, loggedInUser.getUserName());
             ResultSet rs = fetchCartItems.executeQuery();
 
             System.out.println("\n----------- 🛒 Your Cart -----------");
@@ -201,11 +216,11 @@ public class CustomerManagement {
         }
     }
 
-    private static void checkOut() throws SQLException {
+    private static void checkOut() throws SQLException, InterruptedException {
         String fetchAddress = "SELECT name,address_line_1, address_line_2, area, city, state, pincode " +
-                "FROM Modules.Address WHERE username = ?";
+                "FROM address WHERE username = ?";
         try (PreparedStatement fetchCartItems = Database.getCon().prepareStatement(fetchAddress)) {
-            fetchCartItems.setString(1, user.getUserName());
+            fetchCartItems.setString(1, loggedInUser.getUserName());
             ResultSet rs = fetchCartItems.executeQuery();
             boolean flag = true;
             boolean found = false;
@@ -233,7 +248,7 @@ public class CustomerManagement {
                     System.out.println("Want to Delivered to your default address");
                     String choice = sc.next();
                     if (choice.equalsIgnoreCase("yes")) {
-                        System.out.println("✅ Delivery address Database.getCon()firmed.");
+                        System.out.println("✅ Delivery address Confirmed.");
                         break;
                     } else {
                         flag = false;
@@ -243,7 +258,7 @@ public class CustomerManagement {
             if (!found) {
                 System.out.println("❌ No address found. You can add a new address");
                 addAddress();
-                System.out.println("✅ Modules.Address Added Successfully");
+                System.out.println("✅ Address Added Successfully");
             }
         }
         System.out.println("Choose your Modules.Address ID : ");
@@ -254,7 +269,7 @@ public class CustomerManagement {
 
         switch (choice) {
             case 1:
-//                payment();
+                payment();
                 break;
             case 2:
                 System.out.println("↩️ Returning to previous menu...");
@@ -269,8 +284,8 @@ public class CustomerManagement {
 
     }
 
-    public static void start(User loggedInUser) {
-//        Customer customer = new Customer(loggedInUser);
+    public static void start(User loggedInUser) throws InterruptedException {
+        new CustomerManagement(loggedInUser);
         Scanner sc = new Scanner(System.in);
 
         while (true) {
@@ -285,7 +300,7 @@ public class CustomerManagement {
             System.out.print("Choose an option (1-7): ");
 
             int choice = sc.nextInt();
-            sc.nextLine(); // Database.getCon()sume newline
+            sc.nextLine(); // Database.getCon()some newline
 
             try {
                 switch (choice) {
@@ -299,6 +314,7 @@ public class CustomerManagement {
                         viewCart();
                         break;
                     case 4:
+                        // Fully Working
                         profileManagement();
                         break;
                     case 5:

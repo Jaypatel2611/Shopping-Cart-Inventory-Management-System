@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Register New User</title>
+    <meta charset="UTF-8"/>
+    <meta content="width=device-width, initial-scale=1" name="viewport"/>
+    <title>Register New Modules.Users</title>
     <style>
         body {
           font-family: Arial, sans-serif;
@@ -87,24 +87,25 @@
 <body>
 
 <div class="container">
-    <h2>Register New User</h2>
+    <h2>Register New Modules.Users</h2>
     <form id="registrationForm" novalidate>
         <div class="error-message" id="errorMsg"></div>
         <label for="name">Name</label>
-        <input type="text" id="name" name="name" placeholder="Enter your name" required />
+        <input id="name" name="name" placeholder="Enter your name" required type="text"/>
 
         <label for="phone">Phone</label>
-        <input type="tel" id="phone" name="phone" placeholder="Enter your phone number" required pattern="^\+?[0-9\s\-]{7,15}$" />
+        <input id="phone" name="phone" pattern="^\+?[0-9\s\-]{7,15}$" placeholder="Enter your phone number" required
+               type="tel"/>
 
         <label for="email">Email</label>
-        <input type="email" id="email" name="email" placeholder="Enter your email" required />
+        <input id="email" name="email" placeholder="Enter your email" required type="email"/>
 
         <label for="password">Password</label>
-        <input type="password" id="password" name="password" placeholder="Enter password" required minlength="6" />
+        <input id="password" minlength="6" name="password" placeholder="Enter password" required type="password"/>
 
         <div class="role-group">
-            <label><input type="radio" name="role" value="customer" checked /> Customer</label>
-            <label><input type="radio" name="role" value="admin" /> Admin</label>
+            <label><input checked name="role" type="radio" value="customer"/> Modules.Users.CustomerManagement</label>
+            <label><input name="role" type="radio" value="admin"/> Admin</label>
         </div>
 
         <button type="submit">Register</button>
