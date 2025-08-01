@@ -10,8 +10,8 @@ public class Database {
     static {
         try {
             con = DriverManager.getConnection(
-                    "jdbc:mysql://localhost:3307/myjdbc_2025?allowPublicKeyRetrieval=true&useSSL=false",
-                    "jay_mysql",
+                    "jdbc:mysql://localhost:3307/Shopping_Cart?allowPublicKeyRetrieval=true&useSSL=false",
+                    "root",
                     "pass"
             );
         } catch (SQLException e) {

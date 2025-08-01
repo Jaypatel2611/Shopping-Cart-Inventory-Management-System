@@ -6,8 +6,8 @@ import java.util.HashMap;
 
 public class User {
     static HashMap<Integer, User> loggedInUser = new HashMap<>();
-    
-    int id;
+
+    int user_id;
     String firstName;
     String lastName;
     String userName;
@@ -16,8 +16,8 @@ public class User {
     String email;
     String role;
 
-    public User(int id, String firstName, String lastName, String userName, String password, String email, String mobileNo, String role) {
-        this.id = id;
+    public User(int user_id, String firstName, String lastName, String userName, String password, String email, String mobileNo, String role) {
+        this.user_id = user_id;
         this.firstName = firstName;
         this.lastName = lastName;
         this.userName = userName;
@@ -28,11 +28,15 @@ public class User {
     }
 
     public static void addLoggedInUser(ResultSet userData) throws SQLException {
-        loggedInUser.put(userData.getInt("id"), new User(userData.getInt("id"), userData.getString("firstName"), userData.getString("lastName"), userData.getString("userName"), userData.getString("password"), userData.getString("email"), userData.getString("mobileno"), userData.getString("role")));
+        loggedInUser.put(userData.getInt("user_id"), new User(userData.getInt("user_id"), userData.getString("first_name"), userData.getString("last_name"), userData.getString("username"), userData.getString("password"), userData.getString("email"), userData.getString("mobile_no"), userData.getString("role")));
     }
 
     public static User getUserById(int id) {
         return loggedInUser.get(id);
+    }
+
+    public int getUserId() {
+        return user_id;
     }
 
     public String getFirstName() {

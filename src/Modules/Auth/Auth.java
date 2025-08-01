@@ -2,24 +2,12 @@ package Modules.Auth;
 
 import Modules.Users.User;
 
-import java.sql.*;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Scanner;
 
 public class Auth {
-    static Connection con;
-
-    static {
-        try {
-            con = DriverManager.getConnection(
-                    "jdbc:mysql://localhost:3307/myjdbc_2025?allowPublicKeyRetrieval=true&useSSL=false",
-                    "jay_mysql",
-                    "pass"
-            );
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     Scanner sc = new Scanner(System.in);
 
     private boolean isValidEmail(String email) {
@@ -44,6 +32,7 @@ public class Auth {
         System.out.print("Enter Last Name : ");
         String lastName = sc.next();
         String email;
+        sc.nextLine();
         do {
             System.out.print("Enter your email: ");
             email = sc.nextLine().trim();
@@ -62,6 +51,7 @@ public class Auth {
             mobileNo = sc.nextLine().trim();
 
             if (isValidMobileNo(mobileNo)) {
+                System.out.println("✅ Valid mobile No!");
                 break;
             } else {
                 System.out.println("❌ Invalid mobile number! It must contain exactly 10 digits.");
@@ -86,13 +76,15 @@ public class Auth {
 
         }
 
-        String insertUser = "INSERT INTO user(firstName,lastName,userName,password,role) VALUES(?,?,?,?,?)";
-        try (PreparedStatement insertStmt = con.prepareStatement(insertUser)) {
+        String insertUser = "INSERT INTO users(first_name,last_name,username,mobile_no,email,password,role) VALUES(?,?,?,?,?,?,?)";
+        try (PreparedStatement insertStmt = Database.Database.getCon().prepareStatement(insertUser)) {
             insertStmt.setString(1, firstName);
             insertStmt.setString(2, lastName);
             insertStmt.setString(3, userName);
-            insertStmt.setString(4, password);
-            insertStmt.setString(5, "user");
+            insertStmt.setString(4, mobileNo);
+            insertStmt.setString(5, email);
+            insertStmt.setString(6, password);
+            insertStmt.setString(7, "user");
             insertStmt.executeUpdate();
         }
         System.out.println("✅ Signed Up Successfully");
@@ -104,8 +96,8 @@ public class Auth {
         System.out.print("Enter Password : ");
         String password = sc.next();
 
-        String fetchUserDetails = "SELECT * FROM user WHERE userName = ? AND password = ?";
-        try (PreparedStatement insertStmt = con.prepareStatement(fetchUserDetails)) {
+        String fetchUserDetails = "SELECT * FROM users WHERE username = ? AND password = ?";
+        try (PreparedStatement insertStmt = Database.Database.getCon().prepareStatement(fetchUserDetails)) {
             insertStmt.setString(1, userName);
             insertStmt.setString(2, password);
 
@@ -115,7 +107,7 @@ public class Auth {
                 if (password.equals(fetchedPassword)) {
                     System.out.println("✅ Logged In Successfully");
                     User.addLoggedInUser(rs);
-                    return rs.getInt("id");
+                    return rs.getInt("user_id");
                 } else {
                     System.out.println("❌ Invalid Credentials");
                 }
