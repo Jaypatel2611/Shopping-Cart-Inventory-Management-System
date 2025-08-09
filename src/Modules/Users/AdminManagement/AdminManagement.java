@@ -106,6 +106,7 @@ public class AdminManagement {
 class Admin
 {
     public static void main(String[] args) throws Exception{
+        Scanner sc = new Scanner(System.in);
         AdminManagement p = new AdminManagement();
         int choice = 0;
         Connection con= DriverManager.getConnection(
@@ -121,6 +122,7 @@ class Admin
             System.out.println("4 - Delete Product");
             System.out.println("5 - Exit");
             System.out.println("Enter your choice");
+            choice = sc.nextInt();
             switch (choice)
             {
                 case 1:p.Addproduct(con);break;

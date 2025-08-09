@@ -5,21 +5,19 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class Database {
-    static Connection con;
-
-    static {
-        try {
-            con = DriverManager.getConnection(
-                    "jdbc:mysql://localhost:3307/myjdbc_2025?allowPublicKeyRetrieval=true&useSSL=false",
-                    "jay_mysql",
-                    "pass"
-            );
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static Connection getCon() {
+    static Connection con = null;
+    static public Connection getCon() throws Exception
+    {
+        String dburl = "jdbc:mysql://localhost:3306/shopping_system";
+        String dbuser = "root";
+        String dbpass = "";
+        String driver = "com.mysql.cj.jdbc.Driver";
+        Class.forName(driver);
+        con = DriverManager.getConnection(dburl,dbuser,dbpass);
         return con;
     }
+
+
+
+
 }

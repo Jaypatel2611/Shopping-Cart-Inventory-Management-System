@@ -4,6 +4,7 @@ import Database.Database;
 import Modules.Address.Address;
 import Modules.Users.User;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -58,7 +59,7 @@ public class CustomerManagement {
         }
     }
 
-    private static void searchProduct() throws SQLException {
+    private static void searchProduct() throws Exception {
         System.out.print("Enter Product Name : ");
         String productName = sc.nextLine().toLowerCase();
 
@@ -84,11 +85,370 @@ public class CustomerManagement {
         }
     }
 
-    private static void viewCategories() {
+    private static void viewCategories() throws Exception {
+        int choice = 0;
+        Connection con = Database.getCon();
+        do {
+            System.out.println("1 - Grocery");
+            System.out.println("2 - Electronics");
+            System.out.println("3 - Personal Care");
+            System.out.println("4 - Beverages");
+            System.out.println("5 - Home & Kitchen Appliances");
+            System.out.println("6 - Stationery Items");
+            System.out.println("7 - Fashion");
+            System.out.println("8 - Cleaning Supplies");
+            System.out.println("9 - Exit");
+            System.out.println("Enter your choice - ");
+            choice = sc.nextInt();
+            switch (choice)
+            {
+                case 1:
+                    int choice1 = 0;
+                    do {
+                        System.out.println("1 - Fruits");
+                        System.out.println("2 - Vegetables");
+                        System.out.println("3 - Snacks");
+                        System.out.println("4 - Exit");
+                        System.out.println("Enter your choice");
+                        choice1 = sc.nextInt();
+                        switch (choice1)
+                        {
+                            case 1:
+                                String select = "select * from product where category_id = ? and subcategory_id = ? ";
+                                PreparedStatement ps = con.prepareStatement(select);
+                                ps.setInt(1,1001);
+                                ps.setInt(2,101);
+                                ResultSet rs = ps.executeQuery();
+                                while(rs.next())
+                                {
+                                    System.out.println(rs.getInt(1)+"\t"+rs.getInt(2)+"\t"+rs.getInt(3)+"\t"+rs.getString(4)+"\t"+rs.getString(5)+"\t"+rs.getDouble(6)+"\t"+rs.getInt(7));
+                                }
+//                                String insert = "insert into cart(product_id,product_name,description,price,quantity) values(?,?,?,?,?)";
+//                                System.out.println("Enter Quantity - ");
+//                                int quantity = sc.nextInt();
+//                                ps.setInt(1,rs.getInt(2));
+//                                ps.setString(2, rs.getString(3));
+//                                ps.setString(3, rs.getString(4));
+//                                ps.setDouble(4,rs.getDouble(5));
+//                                ps.setInt(5,quantity);
+//                                ps.executeUpdate();
+
+                                break;
+                            case 2:String select1 = "select * from product where category_id = ? and subcategory_id = ? ";
+                                PreparedStatement ps1 = con.prepareStatement(select1);
+                                ps1.setInt(1,1001);
+                                ps1.setInt(2,101);
+                                ResultSet rs1 = ps1.executeQuery();
+                                while(rs1.next())
+                                {
+                                    System.out.println(rs1.getInt(1)+"\t"+rs1.getInt(2)+"\t"+rs1.getInt(3)+"\t"+rs1.getString(4)+"\t"+rs1.getString(5)+"\t"+rs1.getDouble(6)+"\t"+rs1.getInt(7));
+                                }break;
+                            case 3:String select2 = "select * from product where category_id = ? and subcategory_id = ? ";
+                                PreparedStatement ps2 = con.prepareStatement(select2);
+                                ps2.setInt(1,1001);
+                                ps2.setInt(2,101);
+                                ResultSet rs2 = ps2.executeQuery();
+                                while(rs2.next())
+                                {
+                                    System.out.println(rs2.getInt(1)+"\t"+rs2.getInt(2)+"\t"+rs2.getInt(3)+"\t"+rs2.getString(4)+"\t"+rs2.getString(5)+"\t"+rs2.getDouble(6)+"\t"+rs2.getInt(7));
+                                }break;
+                            case 4:
+                                System.out.println("Exiting");break;
+                            default:
+                                System.out.println("Invalid Choice");
+                                break;
+                        }
+                    }
+                    while (choice1!=4);
+                    break;
+
+                case 2:
+                    int choice2 = 0;
+                    do {
+                        System.out.println("1 - Mobiles Phones");
+                        System.out.println("2 - Laptops");
+                        System.out.println("3 - Phone and Laptop Accessories");
+                        System.out.println("4 - Exit");
+                        System.out.println("Enter your choice - ");
+                        choice2 = sc.nextInt();
+                        switch (choice2)
+                        {
+                            case 1: String select = "select * from product where category_id = ? and subcategory_id = ? ";
+                                PreparedStatement ps = con.prepareStatement(select);
+                                ps.setInt(1,1001);
+                                ps.setInt(2,101);
+                                ResultSet rs = ps.executeQuery();
+                                while(rs.next())
+                                {
+                                    System.out.println(rs.getInt(1)+"\t"+rs.getInt(2)+"\t"+rs.getInt(3)+"\t"+rs.getString(4)+"\t"+rs.getString(5)+"\t"+rs.getDouble(6)+"\t"+rs.getInt(7));
+                                }break;
+                            case 2:String select1 = "select * from product where category_id = ? and subcategory_id = ? ";
+                                PreparedStatement ps1 = con.prepareStatement(select1);
+                                ps1.setInt(1,1001);
+                                ps1.setInt(2,101);
+                                ResultSet rs1 = ps1.executeQuery();
+                                while(rs1.next())
+                                {
+                                    System.out.println(rs1.getInt(1)+"\t"+rs1.getInt(2)+"\t"+rs1.getInt(3)+"\t"+rs1.getString(4)+"\t"+rs1.getString(5)+"\t"+rs1.getDouble(6)+"\t"+rs1.getInt(7));
+                                }break;
+                            case 3:String select2 = "select * from product where category_id = ? and subcategory_id = ? ";
+                                PreparedStatement ps2 = con.prepareStatement(select2);
+                                ps2.setInt(1,1001);
+                                ps2.setInt(2,101);
+                                ResultSet rs2 = ps2.executeQuery();
+                                while(rs2.next())
+                                {
+                                    System.out.println(rs2.getInt(1)+"\t"+rs2.getInt(2)+"\t"+rs2.getInt(3)+"\t"+rs2.getString(4)+"\t"+rs2.getString(5)+"\t"+rs2.getDouble(6)+"\t"+rs2.getInt(7));
+                                }break;
+                            case 4:
+                                System.out.println("Exiting");break;
+                            default:
+                                System.out.println("Invalid Choice");
+                                break;
+                        }
+                    }
+                    while (choice2!=4);
+                    break;
+
+
+                case 3:
+                    int choice3 = 0;
+                    do {
+                        System.out.println("1 - Skincare");
+                        System.out.println("2 - Haircare");
+                        System.out.println("3 - Exit");
+                        choice3 = sc.nextInt();
+                        switch (choice3)
+                        {
+                            case 1: String select = "select * from product where category_id = ? and subcategory_id = ? ";
+                                PreparedStatement ps = con.prepareStatement(select);
+                                ps.setInt(1,1001);
+                                ps.setInt(2,101);
+                                ResultSet rs = ps.executeQuery();
+                                while(rs.next())
+                                {
+                                    System.out.println(rs.getInt(1)+"\t"+rs.getInt(2)+"\t"+rs.getInt(3)+"\t"+rs.getString(4)+"\t"+rs.getString(5)+"\t"+rs.getDouble(6)+"\t"+rs.getInt(7));
+                                }break;
+                            case 2: String select1 = "select * from product where category_id = ? and subcategory_id = ? ";
+                                PreparedStatement ps1 = con.prepareStatement(select1);
+                                ps1.setInt(1,1001);
+                                ps1.setInt(2,101);
+                                ResultSet rs1 = ps1.executeQuery();
+                                while(rs1.next())
+                                {
+                                    System.out.println(rs1.getInt(1)+"\t"+rs1.getInt(2)+"\t"+rs1.getInt(3)+"\t"+rs1.getString(4)+"\t"+rs1.getString(5)+"\t"+rs1.getDouble(6)+"\t"+rs1.getInt(7));
+                                }break;
+                            case 3:
+                                System.out.println("Exiting");break;
+                            default:
+                                System.out.println("Invalid choice");
+                                break;
+                        }
+                    }
+                    while (choice3!=3);
+
+
+                    break;
+                case 4:
+                    int choice4 = 0;
+                    do {
+                        System.out.println("1 - Juices");
+                        System.out.println("2 - Soft Drinks");
+                        System.out.println("3 - Exit");
+                        choice4 = sc.nextInt();
+                        switch (choice4)
+                        {
+                            case 1:String select = "select * from product where category_id = ? and subcategory_id = ? ";
+                                PreparedStatement ps = con.prepareStatement(select);
+                                ps.setInt(1,1001);
+                                ps.setInt(2,101);
+                                ResultSet rs = ps.executeQuery();
+                                while(rs.next())
+                                {
+                                    System.out.println(rs.getInt(1)+"\t"+rs.getInt(2)+"\t"+rs.getInt(3)+"\t"+rs.getString(4)+"\t"+rs.getString(5)+"\t"+rs.getDouble(6)+"\t"+rs.getInt(7));
+                                }break;
+                            case 2:String select1 = "select * from product where category_id = ? and subcategory_id = ? ";
+                                PreparedStatement ps1 = con.prepareStatement(select1);
+                                ps1.setInt(1,1001);
+                                ps1.setInt(2,101);
+                                ResultSet rs1 = ps1.executeQuery();
+                                while(rs1.next())
+                                {
+                                    System.out.println(rs1.getInt(1)+"\t"+rs1.getInt(2)+"\t"+rs1.getInt(3)+"\t"+rs1.getString(4)+"\t"+rs1.getString(5)+"\t"+rs1.getDouble(6)+"\t"+rs1.getInt(7));
+                                }break;
+                            case 3:
+                                System.out.println("Exiting");break;
+                            default:
+                                System.out.println("Invalid Choice");
+                                break;
+                        }
+                    }
+                    while (choice4!=3);
+                        break;
+
+                case 5:
+                    int choice5 = 0;
+                    do {
+                        System.out.println("1 - Cookware");
+                        System.out.println("2 - Dining");
+                        System.out.println("3 - Exit");
+                        System.out.println("Enter your choice - ");
+                        choice5 = sc.nextInt();
+                        switch (choice5)
+                        {
+                            case 1: String select = "select * from product where category_id = ? and subcategory_id = ? ";
+                                PreparedStatement ps = con.prepareStatement(select);
+                                ps.setInt(1,1001);
+                                ps.setInt(2,101);
+                                ResultSet rs = ps.executeQuery();
+                                while(rs.next())
+                                {
+                                    System.out.println(rs.getInt(1)+"\t"+rs.getInt(2)+"\t"+rs.getInt(3)+"\t"+rs.getString(4)+"\t"+rs.getString(5)+"\t"+rs.getDouble(6)+"\t"+rs.getInt(7));
+                                }break;
+                            case 2: String select1 = "select * from product where category_id = ? and subcategory_id = ? ";
+                                PreparedStatement ps1 = con.prepareStatement(select1);
+                                ps1.setInt(1,1001);
+                                ps1.setInt(2,101);
+                                ResultSet rs1 = ps1.executeQuery();
+                                while(rs1.next())
+                                {
+                                    System.out.println(rs1.getInt(1)+"\t"+rs1.getInt(2)+"\t"+rs1.getInt(3)+"\t"+rs1.getString(4)+"\t"+rs1.getString(5)+"\t"+rs1.getDouble(6)+"\t"+rs1.getInt(7));
+                                }break;
+                            case 3:
+                                System.out.println("Exiting"); break;
+                            default:
+                                System.out.println("Invalid Choice");
+                                break;
+                        }
+                    }
+                    while (choice5!=3);
+                    break;
+
+                case 6:
+                    int choice6 = 0;
+                    do {
+                        System.out.println("1 - Notebooks");
+                        System.out.println("2 - Pens");
+                        System.out.println("3 - Exit");
+                        System.out.println("Enter your choice - ");
+                        choice6 = sc.nextInt();
+                        switch (choice6)
+                        {
+                            case 1:String select = "select * from product where category_id = ? and subcategory_id = ? ";
+                                PreparedStatement ps = con.prepareStatement(select);
+                                ps.setInt(1,1001);
+                                ps.setInt(2,101);
+                                ResultSet rs = ps.executeQuery();
+                                while(rs.next())
+                                {
+                                    System.out.println(rs.getInt(1)+"\t"+rs.getInt(2)+"\t"+rs.getInt(3)+"\t"+rs.getString(4)+"\t"+rs.getString(5)+"\t"+rs.getDouble(6)+"\t"+rs.getInt(7));
+                                }break;
+                            case 2: String select1 = "select * from product where category_id = ? and subcategory_id = ? ";
+                                PreparedStatement ps1 = con.prepareStatement(select1);
+                                ps1.setInt(1,1001);
+                                ps1.setInt(2,101);
+                                ResultSet rs1 = ps1.executeQuery();
+                                while(rs1.next())
+                                {
+                                    System.out.println(rs1.getInt(1)+"\t"+rs1.getInt(2)+"\t"+rs1.getInt(3)+"\t"+rs1.getString(4)+"\t"+rs1.getString(5)+"\t"+rs1.getDouble(6)+"\t"+rs1.getInt(7));
+                                }break;
+                            case 3:
+                                System.out.println("Exiting");break;
+                            default:
+                                System.out.println("Invalid Choice");
+                        }
+                    }
+                    while (choice6!=3);
+
+
+
+                    break;
+                case 7:
+                    int choice7 = 0;
+                    do {
+                        System.out.println("1 - Men's Wear");
+                        System.out.println("2 - Women's Wear");
+                        System.out.println("3 - Exit");
+                        System.out.println("Enter your Choice - ");
+                        choice7 = sc.nextInt();
+                        switch (choice7)
+                        {
+                            case 1: String select = "select * from product where category_id = ? and subcategory_id = ? ";
+                                PreparedStatement ps = con.prepareStatement(select);
+                                ps.setInt(1,1001);
+                                ps.setInt(2,101);
+                                ResultSet rs = ps.executeQuery();
+                                while(rs.next())
+                                {
+                                    System.out.println(rs.getInt(1)+"\t"+rs.getInt(2)+"\t"+rs.getInt(3)+"\t"+rs.getString(4)+"\t"+rs.getString(5)+"\t"+rs.getDouble(6)+"\t"+rs.getInt(7));
+                                }break;
+                            case 2: String select1 = "select * from product where category_id = ? and subcategory_id = ? ";
+                                PreparedStatement ps1 = con.prepareStatement(select1);
+                                ps1.setInt(1,1001);
+                                ps1.setInt(2,101);
+                                ResultSet rs1 = ps1.executeQuery();
+                                while(rs1.next())
+                                {
+                                    System.out.println(rs1.getInt(1)+"\t"+rs1.getInt(2)+"\t"+rs1.getInt(3)+"\t"+rs1.getString(4)+"\t"+rs1.getString(5)+"\t"+rs1.getDouble(6)+"\t"+rs1.getInt(7));
+                                }break;
+                            case 3:
+                                System.out.println("Exiting");break;
+                            default:
+                                System.out.println("Invalid Choice");
+                        }
+                    }while (choice7!=3);
+                    break;
+
+                case 8:
+                    int choice8 = 0;
+                    do {
+                        System.out.println("1 - Floor Cleaner");
+                        System.out.println("2 - Detergents");
+                        System.out.println("3 - Exit");
+                        System.out.println("Enter your Choice");
+                        switch (choice8)
+                        {
+                            case 1:String select = "select * from product where category_id = ? and subcategory_id = ? ";
+                                PreparedStatement ps = con.prepareStatement(select);
+                                ps.setInt(1,1001);
+                                ps.setInt(2,101);
+                                ResultSet rs = ps.executeQuery();
+                                while(rs.next())
+                                {
+                                    System.out.println(rs.getInt(1)+"\t"+rs.getInt(2)+"\t"+rs.getInt(3)+"\t"+rs.getString(4)+"\t"+rs.getString(5)+"\t"+rs.getDouble(6)+"\t"+rs.getInt(7));
+                                }break;
+                            case 2:String select1 = "select * from product where category_id = ? and subcategory_id = ? ";
+                                PreparedStatement ps1 = con.prepareStatement(select1);
+                                ps1.setInt(1,1001);
+                                ps1.setInt(2,101);
+                                ResultSet rs1 = ps1.executeQuery();
+                                while(rs1.next())
+                                {
+                                    System.out.println(rs1.getInt(1)+"\t"+rs1.getInt(2)+"\t"+rs1.getInt(3)+"\t"+rs1.getString(4)+"\t"+rs1.getString(5)+"\t"+rs1.getDouble(6)+"\t"+rs1.getInt(7));
+                                }break;
+                            case 3:
+                                System.out.println("Exit");break;
+                            default:
+                                System.out.println("Invalid Choice");
+                                break;
+                        }
+                    }
+                    while (choice8!=3);
+
+
+
+
+                    break;
+                case 9:break;
+                default:
+                    System.out.println("Invalid Choice");
+            }
+        }
+        while (choice!=9);
 
     }
 
-    private static void profileManagement() throws SQLException {
+    private static void profileManagement() throws Exception {
         System.out.println("1.FirstName\n2.LastName\n3.UserName\n4.Password\n5. Add Modules.Address\n6.EXIT\n\nEnter your Choice : ");
         int choice = sc.nextInt();
         switch (choice) {
@@ -152,7 +512,7 @@ public class CustomerManagement {
         }
     }
 
-    private static void viewCart() throws SQLException {
+    private static void viewCart() throws Exception {
         String fetchCart = "SELECT p.productName, c.quantity, c.price " +
                 "FROM cart c JOIN product p ON c.product_id = p.product_id " +
                 "WHERE c.username = ?";
@@ -201,7 +561,7 @@ public class CustomerManagement {
         }
     }
 
-    private static void checkOut() throws SQLException {
+    private static void checkOut() throws Exception {
         String fetchAddress = "SELECT name,address_line_1, address_line_2, area, city, state, pincode " +
                 "FROM Modules.Address WHERE username = ?";
         try (PreparedStatement fetchCartItems = Database.getCon().prepareStatement(fetchAddress)) {
@@ -269,7 +629,7 @@ public class CustomerManagement {
 
     }
 
-    public static void start(User loggedInUser) {
+    public static void start(User loggedInUser) throws Exception {
 //        Customer customer = new Customer(loggedInUser);
         Scanner sc = new Scanner(System.in);
 
