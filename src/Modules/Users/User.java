@@ -1,15 +1,26 @@
 package Modules.Users;
 
-public class User {
-    String firstName;
-    String lastName;
-    String userName;
-    String password;
-    String mobileNo;
-    String email;
-    String role;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.HashMap;
 
-    public User(String firstName, String lastName, String userName, String password, String email, String mobileNo,String role) {
+public class User {
+    private static User currentUser = null;
+    public static HashMap<Integer, User> loggedInUser = new HashMap<>();
+
+    // Instance variables (not static!)
+    private int user_id;
+    private String firstName;
+    private String lastName;
+    private String userName;
+    private String password;
+    private String mobileNo;
+    private String email;
+    private String role;
+
+    public User(int user_id, String firstName, String lastName, String userName,
+                String password, String email, String mobileNo, String role) {
+        this.user_id = user_id;
         this.firstName = firstName;
         this.lastName = lastName;
         this.userName = userName;
@@ -17,68 +28,64 @@ public class User {
         this.mobileNo = mobileNo;
         this.email = email;
         this.role = role;
+
     }
 
-    public static void addLoggedInUser() {
-        // TODO : add user to the arraylist
+    // Create and log in the user from DB data
+    public static void addLoggedInUser(ResultSet userData) throws SQLException {
+        User loggedUser = new User(
+                userData.getInt("user_id"),
+                userData.getString("first_name"),
+                userData.getString("last_name"),
+                userData.getString("username"),
+                userData.getString("password"),
+                userData.getString("email"),
+                userData.getString("mobile_no"),
+                userData.getString("role")
+        );
+
+        loggedInUser.put(loggedUser.getUserId(), loggedUser);
+        setCurrentUser(loggedUser);
     }
 
-    public String getFirstName() {
-        return firstName;
+    public static void setCurrentUser(User loggeduser) {
+        currentUser = loggeduser;
+        loggedInUser.put(loggeduser.getUserId(), loggeduser);
     }
 
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
+    public static User getCurrentUser() {
+        return currentUser;
     }
 
-    public String getLastName() {
-        return lastName;
+    public static User getUserById(int id) {
+        return loggedInUser.get(id);
     }
 
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
+    public int getUserId() { return user_id; }
+    public String getFirstName() { return firstName; }
+    public String getLastName() { return lastName; }
+    public String getPassword() { return password; }
+    public String getUserName() { return userName; }
+    public String getMobileNo() { return mobileNo; }
+    public String getEmail() { return email; }
+    public String getRole() { return role; }
+
+    public void setFirstName(String newFirstName) {
+        this.firstName = newFirstName;
     }
 
-    public String getPassword() {
-        return password;
+    public void setLastName(String newLastName) {
+        this.lastName = newLastName;
     }
 
-    public void setPassword(String password) {
+    public void setPassword(String newPassword) {
         this.password = password;
     }
 
-    public String getUserName() {
-        return userName;
+    public void setUserName(String newUserName) {
+        this.userName = newUserName;
     }
-
-    public void setUserName(String userName) {
-        this.userName = userName;
-    }
-
-    public String getMobileNo() {
-        return mobileNo;
-    }
-
-    public void setMobileNo(String mobileNo) {
-        this.mobileNo = mobileNo;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getRole() {
-        return role;
-    }
-
-
-    // TODO : Change void to return type
-    public void getUserById(int id) {
-        // TODO : fetch details of user by id from arrayList
-
+    public void setMobileNo(String newmobileno) {
+        this.mobileNo = newmobileno;
     }
 }
