@@ -14,30 +14,41 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Scanner;
 
-import static Modules.Users.User.getUserById;
+
 import static Modules.Users.User.loggedInUser;
-//import static Modules.Users.User.user_id;
+
 
 public class CustomerManagement {
-   // static double total ;
+
 
     static User user;
     static Scanner sc = new Scanner(System.in);
 
-//    public CustomerManagement(User loggedInUser) {
-//    }
 
-//    public CustomerManagement(ResultSet loggedInUser) throws SQLException {
-//        User.addLoggedInUser(loggedInUser);
-//    }
+private static boolean isValidUPIID(String upi_id) {
+    // Accepts emails like test@example.com
+    String UPIPattern = "^[\\w.-]+@[a-zA-Z\\d.-]+\\.[a-zA-Z]{2,}$";
+    return upi_id.matches(upi_id);
+}
+    public static boolean isValidFirstName(String name) {
+        return name.matches("[a-zA-Z]+");
+    }
+    public static boolean isValidLastName(String name) {
+        return name.matches("[a-zA-Z]+");
+    }
+    private static boolean isValidMobileNo(String mobileNo) {
+        // Accepts exactly 10 digit mobile numbers
+        return mobileNo.matches("\\d{10}");
+    }
+    private static boolean isValidPassword(String password) {
+        String pattern = "^(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*()_+\\-={}:;\"'<>?,./]).{8,}$";
+        return password.matches(pattern);
+    }
 
     public static void addAddress() throws Exception {
-        System.out.println("Enter Modules.Address In formatted way ");
-        System.out.println("Enter Address Line 1 : ");
-        String addressLine1 = sc.nextLine();
-        sc.nextLine();
-        System.out.println("Enter Address Line 2 : ");
-        String addressLine2 = sc.nextLine();
+        System.out.println("Enter Address In formatted way ");
+        System.out.println("Enter Address Line  : ");
+        String addressLine = sc.nextLine();
         System.out.println("Enter Area : ");
         String area = sc.nextLine();
         System.out.println("Enter City : ");
@@ -47,7 +58,7 @@ public class CustomerManagement {
         System.out.println("Enter Pin code : ");
         int pinCode = sc.nextInt();
 
-        Address add = new Address(User.getCurrentUser().getFirstName(), addressLine1, addressLine2, area, city, state, pinCode, user);
+        Address add = new Address(User.getCurrentUser().getFirstName(),addressLine, area, city, state, pinCode, user);
     }
 
     private static void payment() throws Exception {
@@ -58,20 +69,22 @@ public class CustomerManagement {
         switch (payMode) {
             case 1:
                 System.out.println("✅ You have selected Cash On Delivery.");
-                String fetchCart = "SELECT p.product_id, p.product_name, c.quantity, c.price " +
-                        "FROM cart c JOIN product p ON c.product_id = p.product_id where user_id = ?";
+                String fetchCart = "SELECT product_id, product_name, quantity, price " +
+                        "FROM orders where user_id = ?";
 
                 try (PreparedStatement fetchCartItems = Database.getCon().prepareStatement(
                         fetchCart, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
-                    fetchCartItems.setInt(1,User.getCurrentUser().getUserId());
+                    fetchCartItems.setInt(1, User.getCurrentUser().getUserId());
                     ResultSet rs = fetchCartItems.executeQuery();
+                    //System.out.println(rs.next());
 
 
                     boolean hasItems = false;
-                    double  total = 0;
+                    double total = 0;
 
                     // First loop to display cart items
                     while (rs.next()) {
+
                         hasItems = true;
                         int quantity = rs.getInt("quantity");
                         double price = rs.getDouble("price");
@@ -79,20 +92,53 @@ public class CustomerManagement {
                         total += itemTotal;
 
                     }
-                System.out.println("Total Bill-Amount - ₹"+total);
-                System.out.println("📦 Your order is placed successfully and will shipped soon!");
-                }
+                    System.out.println("💰 Bill Amount (Before GST) = ₹" + total);
 
-                break;
+// Apply 18% GST
+                    double gst = total * 0.18;
+                    total += gst;
+
+                    System.out.println("📊 GST (18%) = ₹" + gst);
+                    System.out.println("🧾 Total After GST = ₹" + total);
+
+// Apply delivery charges if total < ₹400
+                    if (total < 400) {
+                        int charges = 40 + (int) (Math.random() * 11); // Random between 40 and 50
+                        System.out.println("🚚 Delivery charges = ₹" + charges);
+                        total += charges;
+                    }
+                    else {
+                        System.out.println("🚚 Delivery charges = ₹" + 0+"(Free)");
+                    }
+
+
+                    System.out.println("🧾 Final Total Bill = ₹" + total);
+                    System.out.println("📦 Your order is placed successfully and will be shipped soon!");
+
+                    break;
+                }
 
             case 2:
                 System.out.println("💳 You have selected Pay Online.");
                 System.out.println("🔐 Redirecting to payment gateway...");
-                Thread.sleep(1000);
+                Thread.sleep(2000);
                 System.out.println("Enter your UPI ID");
-                String UPI_ID = sc.next();
+                String UPI_ID ;
+                sc.nextLine();
+                do {
+                    System.out.print("Enter your UPI ID: ");
+                    UPI_ID = sc.nextLine().trim();
+
+                    if (isValidUPIID(UPI_ID)) {
+                        System.out.println("✅ Valid UPI ID!");
+                        break;
+                    } else {
+                        System.out.println("❌ Invalid UPI ID! Please enter a valid UPI ID.");
+                    }
+                } while (true);
                 System.out.println("Enter your PIN");
                 int PIN = sc.nextInt();
+                Thread.sleep(10000);
                 String fetchCart1 = "SELECT p.product_id, p.product_name, o.quantity, o.price " +
                         "FROM orders o JOIN product p ON o.product_id = p.product_id where user_id = ?" ;
 
@@ -112,7 +158,24 @@ public class CustomerManagement {
                         total += itemTotal;
 
                     }
-                    System.out.println("Total Bill-Amount - ₹" + total);
+                    System.out.println("💰 Bill Amount (Before GST) = ₹" + total);
+
+// Apply 18% GST
+                    double gst = total * 0.18;
+                    total += gst;
+
+                    System.out.println("📊 GST (18%) = ₹" + gst);
+                    System.out.println("🧾 Total After GST = ₹" + total);
+
+// Apply delivery charges if total < ₹400
+                    if (total < 400) {
+                        int charges = 40 + (int) (Math.random() * 11); // Random between 40 and 50
+                        System.out.println("🚚 Delivery charges = ₹" + charges);
+                        total += charges;
+                    }
+                    else {
+                        System.out.println("🚚 Delivery charges = ₹" + 0+"(Free)");
+                    }
                     Thread.sleep(1000);
                     System.out.println("📦 Your order is placed successfully and will shipped soon!");
                 }
@@ -316,7 +379,7 @@ public class CustomerManagement {
                                     }
                                     else
                                     {
-                                        System.out.println("not founded");
+                                        System.out.println("Not enough stock available!");
                                     }
                                 }
 //
@@ -1215,9 +1278,10 @@ public class CustomerManagement {
                         System.out.println("2 - Detergents");
                         System.out.println("3 - Exit");
                         System.out.println("Enter your Choice");
+                        choice8 = sc.nextInt();
                         switch (choice8) {
                             case 1:
-                                String select = "select * from product where category_id = ? and subcategory = ? ";
+                                String select = "select * from product where category_id = ? and subcategory_id = ? ";
                                 PreparedStatement ps = con.prepareStatement(select,ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_READ_ONLY);
                                 ps.setInt(1, 8);
                                 ps.setInt(2,801);
@@ -1344,7 +1408,19 @@ public class CustomerManagement {
 //                int currentUserId = 1;
 //                User user = loggedInUser.get(currentUserId);
                 System.out.print("Enter new FirstName : ");
-                String newFirstName = sc.next();
+                String newFirstName;
+                do {
+                    System.out.print("Enter First Name : ");
+                    newFirstName = sc.next().toLowerCase();
+                    if (isValidFirstName(newFirstName)) {
+                        System.out.println("Valid first name ✅");
+                        break;
+                    } else {
+                        System.out.println("Invalid first name ❌ (only letters allowed)");
+                    }
+
+                }
+                while (true);
                 String updateFirstName = "UPDATE users SET first_name = ? WHERE username = ?";
                 try (PreparedStatement updateStmt = Database.getCon().prepareStatement(updateFirstName)) {
                     updateStmt.setString(1, newFirstName);
@@ -1355,8 +1431,21 @@ public class CustomerManagement {
                 user.setFirstName(newFirstName);
                 break;
             case 2:
-                System.out.print("Enter new LastName : ");
-                String newLastName = sc.next();
+               // System.out.print("Enter new LastName : ");
+                String newLastName;
+
+                do {
+                    System.out.print("Enter  New Last Name : ");
+                    newLastName = sc.next().toLowerCase();
+                    if (isValidLastName(newLastName)) {
+                        System.out.println("Valid Last name ✅");
+                        break;
+                    } else {
+                        System.out.println("Invalid Last name ❌ (only letters allowed)");
+                    }
+
+                }
+                while (true);
                 String updateLastName = "UPDATE users SET last_name = ? WHERE userName = ?";
                 try (PreparedStatement updateStmt = Database.getCon().prepareStatement(updateLastName)) {
                     updateStmt.setString(1, newLastName);
@@ -1380,8 +1469,18 @@ public class CustomerManagement {
                 break;
             case 4://int currentUserId = 1;
                User user1 = loggedInUser.get(User.getCurrentUser().getUserId());
-                System.out.print("Enter new MobileNumber : ");
-                String newmobileno = sc.next();
+                String newmobileno ;
+                do {
+                    System.out.print("Enter new MobileNumber : ");
+                    newmobileno = sc.nextLine().trim();
+
+                    if (isValidMobileNo(newmobileno)) {
+                        System.out.println("✅ Valid mobile No!");
+                        break;
+                    } else {
+                        System.out.println("❌ Invalid mobile number! It must contain exactly 10 digits.");
+                    }
+                } while (true);
                 String updatemobileno = "UPDATE users SET mobile_no = ? WHERE username = ?";
                 try (PreparedStatement updateStmt = Database.getCon().prepareStatement(updatemobileno)) {
                     updateStmt.setString(1, newmobileno);
@@ -1394,16 +1493,29 @@ public class CustomerManagement {
             case 5:
                 //System.out.println(user.getPassword());
                 System.out.print("Enter new Password : ");
-                String newPassword = sc.next();
-                String updatePassword = "UPDATE users SET password = ? WHERE username = ?";
-                try (PreparedStatement updateStmt = Database.getCon().prepareStatement(updatePassword)) {
-                    updateStmt.setString(1, newPassword);
-                    updateStmt.setString(2, User.getCurrentUser().getUserName());
-                    updateStmt.executeUpdate();
+                String newPassword ;
+                while (true) {
+                    System.out.print("Enter Password : ");
+                    newPassword = sc.next();
+
+                    if (isValidPassword(newPassword)) {
+                        break;
+                    } else {
+                        System.out.println("❌ Password must be at least 8 characters long, contain:");
+                        System.out.println("   → At least one uppercase letter");
+                        System.out.println("   → At least one digit");
+                        System.out.println("   → At least one special character (!@#$%^&* etc.)");
+                    }
+                    String updatePassword = "UPDATE users SET password = ? WHERE username = ?";
+                    try (PreparedStatement updateStmt = Database.getCon().prepareStatement(updatePassword)) {
+                        updateStmt.setString(1, newPassword);
+                        updateStmt.setString(2, User.getCurrentUser().getUserName());
+                        updateStmt.executeUpdate();
+                    }
+                    System.out.println("✅ Password Updated Successfully");
+                    user.setPassword(newPassword);
+                    break;
                 }
-                System.out.println("✅ Password Updated Successfully");
-                user.setPassword(newPassword);
-                break;
             case 6:
                 addAddress();
                 System.out.println("✅ Address Added Successfully");
@@ -1549,7 +1661,7 @@ public class CustomerManagement {
                                 {
                                     viewCart();
                                 }
-                                else {
+                                else if(ans1.equals("no")) {
                                     System.out.println("✅ Order placed successfully!");
                                     String users = "select first_name,user_id from users where user_id = ?";
                                     PreparedStatement ps3 = Database.getCon().prepareStatement(users);
@@ -1606,24 +1718,32 @@ public class CustomerManagement {
 
                                     break;
                                 }
+                                else
+                                {
+                                    System.out.println("Invalid choice");
+                                }
                             }
 
 
                         }
                     }
+                    Thread.sleep(5000);
                     break;
 
                 case 2:
                     System.out.println("✅ Proceeding to checkout...");
                     checkOut();
+                    Thread.sleep(5000);
                     break;
 
                 case 3:
                     System.out.println("🔙 Returning to previous menu...");
+                    Thread.sleep(5000);
                     break;
 
                 default:
                     System.out.println("❌ Invalid choice! Please select 1, 2, or 3.");
+                    Thread.sleep(5000);
             }
         }
     }
@@ -1643,8 +1763,7 @@ public class CustomerManagement {
 
             while (rs.next()) {
                 String name = rs.getString("name");
-                String address1 = rs.getString("address_line_1");
-                String address2 = rs.getString("address_line_2");
+                String address = rs.getString("address_line_2");
                // String area = rs.getString("area");
                 String city = rs.getString("city");
                 String state = rs.getString("state");
@@ -1652,8 +1771,7 @@ public class CustomerManagement {
                 System.out.println("----------------------------------");
                 System.out.println("\n📦 Saved Address:");
                 System.out.println("Name           : " + name);
-                System.out.println("Address Line1  : " + address1);
-                System.out.println("Address Line2  : " + address2);
+                System.out.println("Address Line  : " + address);
                // System.out.println("Area         : " + area);
                 System.out.println("City           : " + city);
                 System.out.println("State          : " + state);
@@ -1713,6 +1831,7 @@ public class CustomerManagement {
         switch (choice) {
             case 1:
                 payment();
+                Thread.sleep(5000);
                 break;
             case 2:
                 System.out.println("↩️ Returning to previous menu...");
@@ -1737,8 +1856,8 @@ public class CustomerManagement {
             System.out.println("3. 🛒 View Cart");
             System.out.println("4. 👤 Profile Management");
             System.out.println("5. 📦 My Orders");
-            System.out.println("6.    Process Order(by stack)");
-            System.out.println("7.    View Order Stack");
+            System.out.println("6.    Process Order");
+            System.out.println("7.    View Order ");
             System.out.println("8.    Undo Last Order");
             System.out.println("9. 🚪 Logout / Exit");
            // System.out.println("7. 💳 Back To Last Menu");
@@ -1886,17 +2005,17 @@ class OrderProcessor {
                 Order order = new Order(productName, userId, orderId, productId, quantity, totalPrice, orderDate);
 
                 // 3. Delete from DB
-                String deleteQuery = "DELETE FROM orders WHERE order_id = ?";
-                PreparedStatement deletePs = con.prepareStatement(deleteQuery);
-                deletePs.setInt(1, orderId);
-                int rowsAffected = deletePs.executeUpdate();
-
-                if (rowsAffected > 0) {
-                    System.out.println("Order processed and deleted from DB.");
+//                String deleteQuery = "DELETE FROM orders WHERE order_id = ?";
+//                PreparedStatement deletePs = con.prepareStatement(deleteQuery);
+//                deletePs.setInt(1, orderId);
+//                int rowsAffected = deletePs.executeUpdate();
+//
+//                if (rowsAffected > 0) {
+//                    System.out.println("Order processed and deleted from DB.");
                     stack.push(order);  // use manual push logic
-                } else {
-                    System.out.println("Failed to delete order.");
-                }
+//                } else {
+//                    System.out.println("Failed to delete order.");
+//                }
             } else {
                 System.out.println("Order ID not found.");
             }
