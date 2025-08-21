@@ -4,46 +4,48 @@ import Database.Database;
 import Modules.Address.Address;
 import Modules.Auth.Auth;
 import Modules.Users.User;
- import Modules.Users.CustomerManagement.CustomerManagement;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
 import java.sql.*;
-import java.util.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Date;
-
-
-import static Modules.Users.User.loggedInUser;
+import java.util.Scanner;
 
 
 public class CustomerManagement extends User {
 
 
+    static final String Ticket_dir = "D:\\";
     static User user;
     static Scanner sc = new Scanner(System.in);
 
     public CustomerManagement(int user_id, String firstName, String lastName, String userName, String password, String email, String mobileNo, String role) {
         super(user_id, firstName, lastName, userName, password, email, mobileNo, role);
     }
-    public String getrole() {
-        return "customer";
-    }
-
 
     private static boolean isValidUPIID(String upi_id) {
-    // Accepts emails like test@example.com
-    String UPIPattern = "^[\\w.-]+@[a-zA-Z\\d.-]+\\.[a-zA-Z]{2,}$";
-    return upi_id.matches(upi_id);
-}
+        // Accepts emails like test@example.com
+        String UPIPattern = "^[\\w.-]+@[a-zA-Z\\d.-]+\\.[a-zA-Z]{2,}$";
+        return upi_id.matches(upi_id);
+    }
+
     public static boolean isValidFirstName(String name) {
         return name.matches("[a-zA-Z]+");
     }
+
     public static boolean isValidLastName(String name) {
         return name.matches("[a-zA-Z]+");
     }
+
     private static boolean isValidMobileNo(String mobileNo) {
         // Accepts exactly 10 digit mobile numbers
         return mobileNo.matches("\\d{10}");
     }
+
     private static boolean isValidPassword(String password) {
         String pattern = "^(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*()_+\\-={}:;\"'<>?,./]).{8,}$";
         return password.matches(pattern);
@@ -62,10 +64,10 @@ public class CustomerManagement extends User {
         System.out.println("Enter Pin code : ");
         int pinCode = sc.nextInt();
 
-        Address add = new Address(User.getCurrentUser().getFirstName(),addressLine, area, city, state, pinCode, user);
+        Address add = new Address(User.getCurrentUser().getFirstName(), addressLine, area, city, state, pinCode, user);
     }
 
-    private static void payment(int p_id,int quantity) throws Exception {
+    private static void payment(int p_id, int quantity) throws Exception {
         System.out.println("1.Cash On Delivery\n2.Pay Online\n\nSelect Mode of Payment : ");
         int payMode = sc.nextInt();
         sc.nextLine(); // clear the newline character after nextInt()
@@ -110,9 +112,8 @@ public class CustomerManagement extends User {
                         int charges = 40 + (int) (Math.random() * 11); // Random between 40 and 50
                         System.out.println("🚚 Delivery charges = ₹" + charges);
                         total += charges;
-                    }
-                    else {
-                        System.out.println("🚚 Delivery charges = ₹" + 0+"(Free)");
+                    } else {
+                        System.out.println("🚚 Delivery charges = ₹" + 0 + "(Free)");
                     }
 
 
@@ -125,8 +126,8 @@ public class CustomerManagement extends User {
             case 2:
                 System.out.println("💳 You have selected Pay Online.");
                 System.out.println("🔐 Redirecting to payment gateway...");
-               // Thread.sleep(2000);
-                String UPI_ID ;
+                // Thread.sleep(2000);
+                String UPI_ID;
                 sc.nextLine();
                 do {
                     System.out.print("Enter your UPI ID: ");
@@ -141,13 +142,13 @@ public class CustomerManagement extends User {
                 } while (true);
                 System.out.println("Enter your PIN");
                 int PIN = sc.nextInt();
-              //  Thread.sleep(10000);
+                //  Thread.sleep(10000);
                 String fetchCart1 = "SELECT p.product_id, p.product_name, o.quantity, o.price " +
-                        "FROM orders o JOIN product p ON o.product_id = p.product_id where user_id = ?" ;
+                        "FROM orders o JOIN product p ON o.product_id = p.product_id where user_id = ?";
 
                 try (PreparedStatement fetchCartItems = Database.getCon().prepareStatement(
                         fetchCart1, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
-                    fetchCartItems.setInt(1,User.getCurrentUser().getUserId());
+                    fetchCartItems.setInt(1, User.getCurrentUser().getUserId());
                     ResultSet rs = fetchCartItems.executeQuery();
                     boolean hasItems = false;
                     double total = 0;
@@ -175,11 +176,10 @@ public class CustomerManagement extends User {
                         int charges = 40 + (int) (Math.random() * 11); // Random between 40 and 50
                         System.out.println("🚚 Delivery charges = ₹" + charges);
                         total += charges;
+                    } else {
+                        System.out.println("🚚 Delivery charges = ₹" + 0 + "(Free)");
                     }
-                    else {
-                        System.out.println("🚚 Delivery charges = ₹" + 0+"(Free)");
-                    }
-                   // Thread.sleep(1000);
+                    // Thread.sleep(1000);
                     System.out.println("📦 Your order is placed successfully and will shipped soon!");
                 }
 
@@ -193,8 +193,7 @@ public class CustomerManagement extends User {
         }
     }
 
-    private static void browseProduct() throws Exception
-    {
+    private static void browseProduct() throws Exception {
         String showproduct = "select product_id,category_id,subcategory_id,product_name,description,price from product";
         PreparedStatement viewProduct = Database.getCon().prepareStatement(showproduct);
         ResultSet rs5 = viewProduct.executeQuery();
@@ -202,33 +201,26 @@ public class CustomerManagement extends User {
         System.out.println();
         System.out.printf("%-5s %-20s %-40s %-10s%n", "ID", "Name", "Description", "Price");
         System.out.println();
-        while(rs5.next())
-        {
+        while (rs5.next()) {
 //            System.out.println(rs5.getInt(1)+"\t\t   "+rs5.getString(4)+"\t\t\t\t "+rs5.getString(5)+"\t\t\t"+rs5.getDouble(6));
-            System.out.printf("%-5d %-20s %-40s %-10.2f%n",rs5.getInt(1), rs5.getString(4), rs5.getString(5), rs5.getDouble(6));
+            System.out.printf("%-5d %-20s %-40s %-10.2f%n", rs5.getInt(1), rs5.getString(4), rs5.getString(5), rs5.getDouble(6));
         }
 
-        String product ;
+        String product;
         int id = 0;
         boolean bname = false;
-        do
-        {
+        do {
             System.out.print("\nEnter product Name or product ID : ");
             product = sc.next().toLowerCase();
-            if (isProductName(product))
-            {
+            if (isProductName(product)) {
                 System.out.println("Valid product Name ✅");
                 bname = true;
                 break;
-            }
-            else if (isProductID(product))
-            {
+            } else if (isProductID(product)) {
                 System.out.println("Valid product ID ✅");
                 id = Integer.parseInt(product);
                 break;
-            }
-            else
-            {
+            } else {
                 System.out.println("❌ Invalid product Name or product ID!");
             }
         } while (true);
@@ -236,28 +228,21 @@ public class CustomerManagement extends User {
 
         String fetchProductByName = "SELECT product_name , description , price FROM product WHERE product_name = ?";
         String fetchProductByID = "SELECT product_id, product_name , description , price FROM product WHERE product_id = ?";
-        try (PreparedStatement insertStmt = Database.getCon().prepareStatement(fetchProductByName,ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_READ_ONLY))
-        {
-            PreparedStatement insertID = Database.getCon().prepareStatement(fetchProductByID,ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_READ_ONLY);
+        try (PreparedStatement insertStmt = Database.getCon().prepareStatement(fetchProductByName, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
+            PreparedStatement insertID = Database.getCon().prepareStatement(fetchProductByID, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
             ResultSet rs = null;
-            if (bname)
-            {
+            if (bname) {
                 insertStmt.setString(1, product);
                 rs = insertStmt.executeQuery();
-            }
-            else
-            {
+            } else {
                 insertID.setInt(1, id);
                 rs = insertID.executeQuery();
             }
 
             boolean found = false;
-            while (rs.next())
-            {
-                if(bname)
-                {
-                    if(rs.getString("product_name").equalsIgnoreCase(product))
-                    {
+            while (rs.next()) {
+                if (bname) {
+                    if (rs.getString("product_name").equalsIgnoreCase(product)) {
                         found = true;
                         String name = rs.getString("product_name");
                         String description = rs.getString("description");
@@ -268,11 +253,8 @@ public class CustomerManagement extends User {
                         System.out.println("Price        : ₹" + price);
                         System.out.println("----------------------------------");
                     }
-                }
-                else
-                {
-                    if(rs.getInt("product_id") == id)
-                    {
+                } else {
+                    if (rs.getInt("product_id") == id) {
                         found = true;
                         String name = rs.getString("product_name");
                         String description = rs.getString("description");
@@ -286,44 +268,34 @@ public class CustomerManagement extends User {
                     }
                 }
             }
-            if(found)
-            {
+            if (found) {
                 System.out.print("\nDo you want to Add item to Cart (yes/no) : ");
                 String ans = sc.next().toLowerCase();
-                if (ans.equals("yes"))
-                {
+                if (ans.equals("yes")) {
                     String select = "select * from product ";
                     PreparedStatement ps = Database.getCon().prepareStatement(select, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
                     ResultSet rs1 = ps.executeQuery();
                     int quantity = 0;
                     boolean found1 = false;
                     boolean sufficientstock = false;
-                    while (rs1.next())
-                    {
-                        if (bname)
-                        {
-                            if(rs1.getString("product_name").equalsIgnoreCase(product))
-                            {
+                    while (rs1.next()) {
+                        if (bname) {
+                            if (rs1.getString("product_name").equalsIgnoreCase(product)) {
                                 System.out.println("Founded");
                                 System.out.print("Enter Quantity to be added to Cart : ");
                                 quantity = sc.nextInt();
-                                if(rs1.getInt(7)>quantity)
-                                {
+                                if (rs1.getInt(7) > quantity) {
                                     sufficientstock = true;
                                 }
                                 found1 = true;
                                 break;
                             }
-                        }
-                        else
-                        {
-                            if(rs1.getInt("product_id") == id)
-                            {
+                        } else {
+                            if (rs1.getInt("product_id") == id) {
                                 System.out.println("Founded");
                                 System.out.print("Enter Quantity to be added to Cart : ");
                                 quantity = sc.nextInt();
-                                if(rs1.getInt(7)>quantity)
-                                {
+                                if (rs1.getInt(7) > quantity) {
                                     sufficientstock = true;
                                 }
                                 found1 = true;
@@ -331,8 +303,7 @@ public class CustomerManagement extends User {
                             }
                         }
                     }
-                    if (found1 && sufficientstock)
-                    {
+                    if (found1 && sufficientstock) {
                         String insert = "insert into cart(product_id,product_name,description,price,quantity,user_id) values(?,?,?,?,?,?)";
                         PreparedStatement ps1 = Database.getCon().prepareStatement(insert);
                         ps1.setInt(1, rs1.getInt(1));
@@ -342,27 +313,21 @@ public class CustomerManagement extends User {
                         ps1.setInt(5, quantity);
                         ps1.setInt(6, User.getCurrentUser().getUserId());
                         ps1.executeUpdate();
-                    }
-                    else
-                    {
+                    } else {
                         System.out.println("not founded");
                     }
                 }
-            }
-            else
-            {
+            } else {
                 System.out.println("No such product found!");
             }
         }
     }
 
-    private static boolean isProductName(String productName)
-    {
+    private static boolean isProductName(String productName) {
         return productName.matches("[a-zA-Z]+");
     }
 
-    private static boolean isProductID(String productID)
-    {
+    private static boolean isProductID(String productID) {
         return productID.matches("\\d+");
     }
 
@@ -383,8 +348,7 @@ public class CustomerManagement extends User {
             System.out.println("9 - Exit");
             System.out.println("Enter your choice - ");
             choice = sc.nextInt();
-            switch (choice)
-            {
+            switch (choice) {
                 case 1:
                     int choice1 = 0;
                     do {
@@ -397,60 +361,51 @@ public class CustomerManagement extends User {
 //                        String usersid = "select user_id from users";
 //                        PreparedStatement ps5 = Database.getCon().prepareStatement(usersid);
 //                        ResultSet rs5 = ps5.executeQuery();
-                        switch (choice1)
-                        {
+                        switch (choice1) {
                             case 1:
                                 String select = "select * from product where category_id = ? and subcategory_id = ? ";
-                                PreparedStatement ps = con.prepareStatement(select,ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_READ_ONLY);
-                                ps.setInt(1,1);
-                                ps.setInt(2,101);
+                                PreparedStatement ps = con.prepareStatement(select, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+                                ps.setInt(1, 1);
+                                ps.setInt(2, 101);
                                 //ps.setInt(2,101);
                                 ResultSet rs = ps.executeQuery();
-                                while(rs.next())
-                                {
-                                    System.out.println(rs.getInt(1)+"\t"+rs.getInt(2)+"\t"+rs.getInt(3)+"\t"+rs.getString(4)+"\t"+rs.getString(5)+"\t"+rs.getDouble(6)+"\t"+rs.getInt(7));
+                                while (rs.next()) {
+                                    System.out.println(rs.getInt(1) + "\t" + rs.getInt(2) + "\t" + rs.getInt(3) + "\t" + rs.getString(4) + "\t" + rs.getString(5) + "\t" + rs.getDouble(6) + "\t" + rs.getInt(7));
                                 }
                                 System.out.println("Do you want to Add any item to Cart(yes/no)");
                                 String ans = sc.next().toLowerCase();
-                                if(ans.equals("yes"))
-                                {
+                                if (ans.equals("yes")) {
                                     System.out.println("Enter p_id of product ");
                                     int p_id = sc.nextInt();
 
                                     rs.beforeFirst(); // Takes Cursor to the start again
-                                    int quantity = 0 ;
+                                    int quantity = 0;
                                     boolean found = false;
                                     boolean sufficientstock = false;
-                                    while (rs.next())
-                                    {
+                                    while (rs.next()) {
 
-                                        if(rs.getInt(1)==p_id)
-                                        {
+                                        if (rs.getInt(1) == p_id) {
                                             System.out.println("founded");
                                             System.out.println("Enter Quantity to be added to Cart ");
                                             quantity = sc.nextInt();
-                                            if(rs.getInt(7)>quantity)
-                                            {
+                                            if (rs.getInt(7) > quantity) {
                                                 sufficientstock = true;
                                             }
                                             found = true;
                                             break;
                                         }
                                     }
-                                    if(found && sufficientstock)
-                                    {
+                                    if (found && sufficientstock) {
                                         String insert = "insert into cart(product_id,product_name,description,price,quantity,user_id) values(?,?,?,?,?,?)";
                                         PreparedStatement ps1 = con.prepareStatement(insert);
-                                        ps1.setInt(1,rs.getInt(1));
+                                        ps1.setInt(1, rs.getInt(1));
                                         ps1.setString(2, rs.getString(4));
                                         ps1.setString(3, rs.getString(5));
-                                        ps1.setDouble(4,rs.getDouble(6));
-                                        ps1.setInt(5,quantity);
-                                        ps1.setInt(6,User.getCurrentUser().getUserId());
+                                        ps1.setDouble(4, rs.getDouble(6));
+                                        ps1.setInt(5, quantity);
+                                        ps1.setInt(6, User.getCurrentUser().getUserId());
                                         ps1.executeUpdate();
-                                    }
-                                    else
-                                    {
+                                    } else {
                                         System.out.println("Not enough stock available!");
                                     }
                                 }
@@ -459,120 +414,111 @@ public class CustomerManagement extends User {
 //
 
                                 break;
-                            case 2:String select1 = "select * from product where category_id = ? and subcategory_id = ? ";
-                                PreparedStatement ps1 = con.prepareStatement(select1,ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_READ_ONLY);
-                                ps1.setInt(1,1);
-                                ps1.setInt(2,102);
+                            case 2:
+                                String select1 = "select * from product where category_id = ? and subcategory_id = ? ";
+                                PreparedStatement ps1 = con.prepareStatement(select1, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+                                ps1.setInt(1, 1);
+                                ps1.setInt(2, 102);
                                 //  ps1.setInt(2,101);
                                 ResultSet rs1 = ps1.executeQuery();
-                                while(rs1.next())
-                                {
-                                    System.out.println(rs1.getInt(1)+"\t"+rs1.getInt(2)+"\t"+rs1.getInt(3)+"\t"+rs1.getString(4)+"\t"+rs1.getString(5)+"\t"+rs1.getDouble(6)+"\t"+rs1.getInt(7));
+                                while (rs1.next()) {
+                                    System.out.println(rs1.getInt(1) + "\t" + rs1.getInt(2) + "\t" + rs1.getInt(3) + "\t" + rs1.getString(4) + "\t" + rs1.getString(5) + "\t" + rs1.getDouble(6) + "\t" + rs1.getInt(7));
                                 }
                                 System.out.println("Do you want to Add any item to Cart(yes/no)");
                                 String ans1 = sc.next().toLowerCase();
-                                if(ans1.equals("yes"))
-                                {
+                                if (ans1.equals("yes")) {
                                     System.out.println("Enter product_id of product ");
                                     int p_id = sc.nextInt();
 
                                     rs1.beforeFirst();
-                                    int quantity = 0 ;
+                                    int quantity = 0;
                                     boolean found = false;
                                     boolean sufficientstock = false;
-                                    while (rs1.next())
-                                    {
+                                    while (rs1.next()) {
 
-                                        if(rs1.getInt(1)==p_id)
-                                        {
+                                        if (rs1.getInt(1) == p_id) {
                                             System.out.println("founded");
                                             System.out.println("Enter Quantity to be added to Cart ");
                                             quantity = sc.nextInt();
-                                            if(rs1.getInt(7)>quantity)
-                                            {
+                                            if (rs1.getInt(7) > quantity) {
                                                 sufficientstock = true;
                                             }
                                             found = true;
                                             break;
                                         }
                                     }
-                                    if(found && sufficientstock)
-                                    {
-                                        String insert = "insert into cart(product_id,product_name,description,price,quantity,user_id) values(?,?,?,?,?,?)";                                        PreparedStatement ps2 = con.prepareStatement(insert);
-                                        ps2.setInt(1,rs1.getInt(1));
+                                    if (found && sufficientstock) {
+                                        String insert = "insert into cart(product_id,product_name,description,price,quantity,user_id) values(?,?,?,?,?,?)";
+                                        PreparedStatement ps2 = con.prepareStatement(insert);
+                                        ps2.setInt(1, rs1.getInt(1));
                                         ps2.setString(2, rs1.getString(4));
                                         ps2.setString(3, rs1.getString(5));
-                                        ps2.setDouble(4,rs1.getDouble(6));
-                                        ps2.setInt(5,quantity);
-                                        ps2.setInt(6,User.getCurrentUser().getUserId());
+                                        ps2.setDouble(4, rs1.getDouble(6));
+                                        ps2.setInt(5, quantity);
+                                        ps2.setInt(6, User.getCurrentUser().getUserId());
                                         ps2.executeUpdate();
-                                    }
-                                    else
-                                    {
+                                    } else {
                                         System.out.println("not founded");
                                     }
-                                }break;
-                            case 3:String select2 = "select * from product where category_id = ? and subcategory_id = ?";
-                                PreparedStatement ps2 = con.prepareStatement(select2,ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_READ_ONLY);
-                                ps2.setInt(1,1);
-                                ps2.setInt(2,103);
+                                }
+                                break;
+                            case 3:
+                                String select2 = "select * from product where category_id = ? and subcategory_id = ?";
+                                PreparedStatement ps2 = con.prepareStatement(select2, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+                                ps2.setInt(1, 1);
+                                ps2.setInt(2, 103);
                                 //ps2.setInt(2,101);
                                 ResultSet rs2 = ps2.executeQuery();
-                                while(rs2.next())
-                                {
-                                    System.out.println(rs2.getInt(1)+"\t"+rs2.getInt(2)+"\t"+rs2.getInt(3)+"\t"+rs2.getString(4)+"\t"+rs2.getString(5)+"\t"+rs2.getDouble(6)+"\t"+rs2.getInt(7));
-                                }System.out.println("Do you want to Add any item to Cart(yes/no)");
+                                while (rs2.next()) {
+                                    System.out.println(rs2.getInt(1) + "\t" + rs2.getInt(2) + "\t" + rs2.getInt(3) + "\t" + rs2.getString(4) + "\t" + rs2.getString(5) + "\t" + rs2.getDouble(6) + "\t" + rs2.getInt(7));
+                                }
+                                System.out.println("Do you want to Add any item to Cart(yes/no)");
                                 String ans2 = sc.next().toLowerCase();
-                                if(ans2.equals("yes"))
-                                {
+                                if (ans2.equals("yes")) {
                                     System.out.println("Enter product_id of product ");
                                     int sub_id = sc.nextInt();
 
                                     rs2.beforeFirst();
-                                    int quantity = 0 ;
+                                    int quantity = 0;
                                     boolean found = false;
                                     boolean sufficientstock = false;
-                                    while (rs2.next())
-                                    {
+                                    while (rs2.next()) {
 
-                                        if(rs2.getInt(1)==sub_id)
-                                        {
+                                        if (rs2.getInt(1) == sub_id) {
                                             System.out.println("founded");
                                             System.out.println("Enter Quantity to be added to Cart ");
                                             quantity = sc.nextInt();
-                                            if(rs2.getInt(7)>quantity)
-                                            {
+                                            if (rs2.getInt(7) > quantity) {
                                                 sufficientstock = true;
                                             }
                                             found = true;
                                             break;
                                         }
                                     }
-                                    if(found && sufficientstock)
-                                    {
+                                    if (found && sufficientstock) {
                                         String insert = "insert into cart(product_id,product_name,description,price,quantity,user_id) values(?,?,?,?,?,?)";
                                         PreparedStatement ps3 = con.prepareStatement(insert);
-                                        ps3.setInt(1,rs2.getInt(1));
+                                        ps3.setInt(1, rs2.getInt(1));
                                         ps3.setString(2, rs2.getString(4));
                                         ps3.setString(3, rs2.getString(5));
-                                        ps3.setDouble(4,rs2.getDouble(6));
-                                        ps3.setInt(5,quantity);
-                                        ps3.setInt(6,User.getCurrentUser().getUserId());
+                                        ps3.setDouble(4, rs2.getDouble(6));
+                                        ps3.setInt(5, quantity);
+                                        ps3.setInt(6, User.getCurrentUser().getUserId());
                                         ps3.executeUpdate();
-                                    }
-                                    else
-                                    {
+                                    } else {
                                         System.out.println("not founded");
                                     }
-                                }break;
+                                }
+                                break;
                             case 4:
-                                System.out.println("Exiting");break;
+                                System.out.println("Exiting");
+                                break;
                             default:
                                 System.out.println("Invalid Choice");
                                 break;
                         }
                     }
-                    while (choice1!=4);
+                    while (choice1 != 4);
                     break;
 
                 case 2:
@@ -584,134 +530,123 @@ public class CustomerManagement extends User {
                         System.out.println("4 - Exit");
                         System.out.println("Enter your choice - ");
                         choice2 = sc.nextInt();
-                        switch (choice2)
-                        {
-                            case 1: String select = "select * from product where category_id = ? and subcategory_id = ?  ";
-                                PreparedStatement ps = con.prepareStatement(select,ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_READ_ONLY);
-                                ps.setInt(1,2);
-                                ps.setInt(2,201);
+                        switch (choice2) {
+                            case 1:
+                                String select = "select * from product where category_id = ? and subcategory_id = ?  ";
+                                PreparedStatement ps = con.prepareStatement(select, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+                                ps.setInt(1, 2);
+                                ps.setInt(2, 201);
                                 // ps.setInt(2,101);
                                 ResultSet rs = ps.executeQuery();
-                                while(rs.next())
-                                {
-                                    System.out.println(rs.getInt(1)+"\t"+rs.getInt(2)+"\t"+rs.getInt(3)+"\t"+rs.getString(4)+"\t"+rs.getString(5)+"\t"+rs.getDouble(6)+"\t"+rs.getInt(7));
+                                while (rs.next()) {
+                                    System.out.println(rs.getInt(1) + "\t" + rs.getInt(2) + "\t" + rs.getInt(3) + "\t" + rs.getString(4) + "\t" + rs.getString(5) + "\t" + rs.getDouble(6) + "\t" + rs.getInt(7));
                                 }
                                 System.out.println("Do you want to Add any item to Cart(yes/no)");
                                 String ans = sc.next().toLowerCase();
-                                if(ans.equals("yes"))
-                                {
+                                if (ans.equals("yes")) {
                                     System.out.println("Enter product_id of product ");
                                     int p_id = sc.nextInt();
 
                                     rs.beforeFirst();
-                                    int quantity = 0 ;
+                                    int quantity = 0;
                                     boolean found = false;
                                     boolean sufficientstock = false;
-                                    while (rs.next())
-                                    {
+                                    while (rs.next()) {
 
-                                        if(rs.getInt(1)==p_id)
-                                        {
+                                        if (rs.getInt(1) == p_id) {
                                             System.out.println("founded");
                                             System.out.println("Enter Quantity to be added to Cart ");
                                             quantity = sc.nextInt();
-                                            if(rs.getInt(7)>quantity)
-                                            {
+                                            if (rs.getInt(7) > quantity) {
                                                 sufficientstock = true;
                                             }
                                             found = true;
                                             break;
                                         }
                                     }
-                                    if(found && sufficientstock)
-                                    {
+                                    if (found && sufficientstock) {
                                         String insert = "insert into cart(product_id,product_name,description,price,quantity,user_id) values(?,?,?,?,?,?)";
                                         PreparedStatement ps1 = con.prepareStatement(insert);
-                                        ps1.setInt(1,rs.getInt(1));
+                                        ps1.setInt(1, rs.getInt(1));
                                         ps1.setString(2, rs.getString(4));
                                         ps1.setString(3, rs.getString(5));
-                                        ps1.setDouble(4,rs.getDouble(6));
-                                        ps1.setInt(5,quantity);
-                                        ps1.setInt(6,User.getCurrentUser().getUserId());
+                                        ps1.setDouble(4, rs.getDouble(6));
+                                        ps1.setInt(5, quantity);
+                                        ps1.setInt(6, User.getCurrentUser().getUserId());
                                         ps1.executeUpdate();
-                                    }
-                                    else
-                                    {
+                                    } else {
                                         System.out.println("not founded");
                                     }
-                                }break;
-                            case 2:String select1 = "select * from product where category_id = ? and subcategory_id = ?  ";
-                                PreparedStatement ps1 = con.prepareStatement(select1,ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_READ_ONLY);
-                                ps1.setInt(1,2);
-                                ps1.setInt(2,202);
+                                }
+                                break;
+                            case 2:
+                                String select1 = "select * from product where category_id = ? and subcategory_id = ?  ";
+                                PreparedStatement ps1 = con.prepareStatement(select1, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+                                ps1.setInt(1, 2);
+                                ps1.setInt(2, 202);
                                 //ps1.setInt(2,101);
                                 ResultSet rs1 = ps1.executeQuery();
-                                while(rs1.next())
-                                {
-                                    System.out.println(rs1.getInt(1)+"\t"+rs1.getInt(2)+"\t"+rs1.getInt(3)+"\t"+rs1.getString(4)+"\t"+rs1.getString(5)+"\t"+rs1.getDouble(6)+"\t"+rs1.getInt(7));
+                                while (rs1.next()) {
+                                    System.out.println(rs1.getInt(1) + "\t" + rs1.getInt(2) + "\t" + rs1.getInt(3) + "\t" + rs1.getString(4) + "\t" + rs1.getString(5) + "\t" + rs1.getDouble(6) + "\t" + rs1.getInt(7));
                                 }
                                 System.out.println("Do you want to Add any item to Cart(yes/no)");
                                 String ans1 = sc.next().toLowerCase();
-                                if(ans1.equals("yes"))
-                                {
+                                if (ans1.equals("yes")) {
                                     System.out.println("Enter product_id of product ");
                                     int p_id = sc.nextInt();
 
                                     rs1.beforeFirst();
-                                    int quantity = 0 ;
+                                    int quantity = 0;
                                     boolean found = false;
                                     boolean sufficientstock = false;
-                                    while (rs1.next())
-                                    {
+                                    while (rs1.next()) {
 
-                                        if(rs1.getInt(1)==p_id)
-                                        {
+                                        if (rs1.getInt(1) == p_id) {
                                             System.out.println("founded");
                                             System.out.println("Enter Quantity to be added to Cart ");
                                             quantity = sc.nextInt();
-                                            if(rs1.getInt(7)>quantity)
-                                            {
+                                            if (rs1.getInt(7) > quantity) {
                                                 sufficientstock = true;
                                             }
                                             found = true;
                                             break;
                                         }
                                     }
-                                    if(found && sufficientstock)
-                                    {
+                                    if (found && sufficientstock) {
                                         String insert = "insert into cart(product_id,product_name,description,price,quantity,user_id) values(?,?,?,?,?,?)";
                                         PreparedStatement ps2 = con.prepareStatement(insert);
-                                        ps2.setInt(1,rs1.getInt(1));
+                                        ps2.setInt(1, rs1.getInt(1));
                                         ps2.setString(2, rs1.getString(4));
                                         ps2.setString(3, rs1.getString(5));
-                                        ps2.setDouble(4,rs1.getDouble(6));
-                                        ps2.setInt(5,quantity);
-                                        ps2.setInt(6,User.getCurrentUser().getUserId());
+                                        ps2.setDouble(4, rs1.getDouble(6));
+                                        ps2.setInt(5, quantity);
+                                        ps2.setInt(6, User.getCurrentUser().getUserId());
                                         ps2.executeUpdate();
-                                    }
-                                    else
-                                    {
+                                    } else {
                                         System.out.println("not founded");
                                     }
-                                }break;
-                            case 3:String select2 = "select * from product where category_id = ?  and subcategory_id = ?";
-                                PreparedStatement ps2 = con.prepareStatement(select2,ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_READ_ONLY);
-                                ps2.setInt(1,2);
-                                ps2.setInt(2,203);
+                                }
+                                break;
+                            case 3:
+                                String select2 = "select * from product where category_id = ?  and subcategory_id = ?";
+                                PreparedStatement ps2 = con.prepareStatement(select2, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+                                ps2.setInt(1, 2);
+                                ps2.setInt(2, 203);
                                 //ps2.setInt(2,101);
                                 ResultSet rs2 = ps2.executeQuery();
-                                while(rs2.next())
-                                {
-                                    System.out.println(rs2.getInt(1)+"\t"+rs2.getInt(2)+"\t"+rs2.getInt(3)+"\t"+rs2.getString(4)+"\t"+rs2.getString(5)+"\t"+rs2.getDouble(6)+"\t"+rs2.getInt(7));
-                                }break;
+                                while (rs2.next()) {
+                                    System.out.println(rs2.getInt(1) + "\t" + rs2.getInt(2) + "\t" + rs2.getInt(3) + "\t" + rs2.getString(4) + "\t" + rs2.getString(5) + "\t" + rs2.getDouble(6) + "\t" + rs2.getInt(7));
+                                }
+                                break;
                             case 4:
-                                System.out.println("Exiting");break;
+                                System.out.println("Exiting");
+                                break;
                             default:
                                 System.out.println("Invalid Choice");
                                 break;
                         }
                     }
-                    while (choice2!=4);
+                    while (choice2 != 4);
                     break;
 
 
@@ -722,122 +657,112 @@ public class CustomerManagement extends User {
                         System.out.println("2 - Haircare");
                         System.out.println("3 - Exit");
                         choice3 = sc.nextInt();
-                        switch (choice3)
-                        {
-                            case 1: String select = "select * from product where category_id = ? and subcategory_id = ? ";
-                                PreparedStatement ps = con.prepareStatement(select,ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_READ_ONLY);
-                                ps.setInt(1,3);
-                                ps.setInt(2,301);
+                        switch (choice3) {
+                            case 1:
+                                String select = "select * from product where category_id = ? and subcategory_id = ? ";
+                                PreparedStatement ps = con.prepareStatement(select, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+                                ps.setInt(1, 3);
+                                ps.setInt(2, 301);
                                 // ps.setInt(2,101);
                                 ResultSet rs = ps.executeQuery();
-                                while(rs.next())
-                                {
-                                    System.out.println(rs.getInt(1)+"\t"+rs.getInt(2)+"\t"+rs.getInt(3)+"\t"+rs.getString(4)+"\t"+rs.getString(5)+"\t"+rs.getDouble(6)+"\t"+rs.getInt(7));
+                                while (rs.next()) {
+                                    System.out.println(rs.getInt(1) + "\t" + rs.getInt(2) + "\t" + rs.getInt(3) + "\t" + rs.getString(4) + "\t" + rs.getString(5) + "\t" + rs.getDouble(6) + "\t" + rs.getInt(7));
                                 }
                                 System.out.println("Do you want to Add any item to Cart(yes/no)");
                                 String ans = sc.next().toLowerCase();
-                                if(ans.equals("yes"))
-                                {
+                                if (ans.equals("yes")) {
                                     System.out.println("Enter product_id of product ");
                                     int p_id = sc.nextInt();
 
                                     rs.beforeFirst();
-                                    int quantity = 0 ;
+                                    int quantity = 0;
                                     boolean found = false;
                                     boolean sufficientstock = false;
-                                    while (rs.next())
-                                    {
+                                    while (rs.next()) {
 
-                                        if(rs.getInt(1)==p_id)
-                                        {
+                                        if (rs.getInt(1) == p_id) {
                                             System.out.println("founded");
                                             System.out.println("Enter Quantity to be added to Cart ");
                                             quantity = sc.nextInt();
-                                            if(rs.getInt(7)>quantity)
-                                            {
+                                            if (rs.getInt(7) > quantity) {
                                                 sufficientstock = true;
                                             }
                                             found = true;
                                             break;
                                         }
                                     }
-                                    if(found && sufficientstock)
-                                    {
-                                        String insert = "insert into cart(product_id,product_name,description,price,quantity,user_id) values(?,?,?,?,?,?)";                                        PreparedStatement ps1 = con.prepareStatement(insert);
-                                        ps1.setInt(1,rs.getInt(1));
+                                    if (found && sufficientstock) {
+                                        String insert = "insert into cart(product_id,product_name,description,price,quantity,user_id) values(?,?,?,?,?,?)";
+                                        PreparedStatement ps1 = con.prepareStatement(insert);
+                                        ps1.setInt(1, rs.getInt(1));
                                         ps1.setString(2, rs.getString(4));
                                         ps1.setString(3, rs.getString(5));
-                                        ps1.setDouble(4,rs.getDouble(6));
-                                        ps1.setInt(5,quantity);
-                                        ps1.setInt(6,User.getCurrentUser().getUserId());
+                                        ps1.setDouble(4, rs.getDouble(6));
+                                        ps1.setInt(5, quantity);
+                                        ps1.setInt(6, User.getCurrentUser().getUserId());
                                         ps1.executeUpdate();
-                                    }
-                                    else
-                                    {
+                                    } else {
                                         System.out.println("not founded");
                                     }
-                                }break;
-                            case 2: String select1 = "select * from product where category_id = ? and subcategory_id = ? ";
-                                PreparedStatement ps1 = con.prepareStatement(select1,ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_READ_ONLY);
-                                ps1.setInt(1,3);
-                                ps1.setInt(2,302);
+                                }
+                                break;
+                            case 2:
+                                String select1 = "select * from product where category_id = ? and subcategory_id = ? ";
+                                PreparedStatement ps1 = con.prepareStatement(select1, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+                                ps1.setInt(1, 3);
+                                ps1.setInt(2, 302);
                                 //  ps1.setInt(2,101);
                                 ResultSet rs1 = ps1.executeQuery();
-                                while(rs1.next())
-                                {
-                                    System.out.println(rs1.getInt(1)+"\t"+rs1.getInt(2)+"\t"+rs1.getInt(3)+"\t"+rs1.getString(4)+"\t"+rs1.getString(5)+"\t"+rs1.getDouble(6)+"\t"+rs1.getInt(7));
+                                while (rs1.next()) {
+                                    System.out.println(rs1.getInt(1) + "\t" + rs1.getInt(2) + "\t" + rs1.getInt(3) + "\t" + rs1.getString(4) + "\t" + rs1.getString(5) + "\t" + rs1.getDouble(6) + "\t" + rs1.getInt(7));
                                 }
                                 System.out.println("Do you want to Add any item to Cart(yes/no)");
                                 String ans1 = sc.next().toLowerCase();
-                                if(ans1.equals("yes"))
-                                {
+                                if (ans1.equals("yes")) {
                                     System.out.println("Enter product_id of product ");
                                     int p_id = sc.nextInt();
 
                                     rs1.beforeFirst();
-                                    int quantity = 0 ;
+                                    int quantity = 0;
                                     boolean found = false;
                                     boolean sufficientstock = false;
-                                    while (rs1.next())
-                                    {
+                                    while (rs1.next()) {
 
-                                        if(rs1.getInt(1)==p_id)
-                                        {
+                                        if (rs1.getInt(1) == p_id) {
                                             System.out.println("founded");
                                             System.out.println("Enter Quantity to be added to Cart ");
                                             quantity = sc.nextInt();
-                                            if(rs1.getInt(7)>quantity)
-                                            {
+                                            if (rs1.getInt(7) > quantity) {
                                                 sufficientstock = true;
                                             }
                                             found = true;
                                             break;
                                         }
                                     }
-                                    if(found && sufficientstock)
-                                    {
-                                        String insert = "insert into cart(product_id,product_name,description,price,quantity,user_id) values(?,?,?,?,?,?)";                                        PreparedStatement ps2 = con.prepareStatement(insert);
-                                        ps2.setInt(1,rs1.getInt(1));
+                                    if (found && sufficientstock) {
+                                        String insert = "insert into cart(product_id,product_name,description,price,quantity,user_id) values(?,?,?,?,?,?)";
+                                        PreparedStatement ps2 = con.prepareStatement(insert);
+                                        ps2.setInt(1, rs1.getInt(1));
                                         ps2.setString(2, rs1.getString(4));
                                         ps2.setString(3, rs1.getString(5));
-                                        ps2.setDouble(4,rs1.getDouble(6));
-                                        ps2.setInt(5,quantity);
-                                        ps2.setInt(6,User.getCurrentUser().getUserId());
+                                        ps2.setDouble(4, rs1.getDouble(6));
+                                        ps2.setInt(5, quantity);
+                                        ps2.setInt(6, User.getCurrentUser().getUserId());
                                         ps2.executeUpdate();
-                                    }
-                                    else
-                                    {
+                                    } else {
                                         System.out.println("not founded");
                                     }
-                                }break;
+                                }
+                                break;
                             case 3:
-                                System.out.println("Exiting");break;
+                                System.out.println("Exiting");
+                                break;
                             default:
                                 System.out.println("Invalid choice");
                                 break;
                         }
                     }
-                    while (choice3!=3);
+                    while (choice3 != 3);
 
 
                     break;
@@ -848,515 +773,12 @@ public class CustomerManagement extends User {
                         System.out.println("2 - Soft Drinks");
                         System.out.println("3 - Exit");
                         choice4 = sc.nextInt();
-                        switch (choice4)
-                        {
-                            case 1:String select = "select * from product where category_id = ? and subcategory_id = ? ";
-                                PreparedStatement ps = con.prepareStatement(select,ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_READ_ONLY);
-                                ps.setInt(1,4);
-                                ps.setInt(2,401);
-                                //ps.setInt(2,101);
-                                ResultSet rs = ps.executeQuery();
-                                while(rs.next())
-                                {
-                                    System.out.println(rs.getInt(1)+"\t"+rs.getInt(2)+"\t"+rs.getInt(3)+"\t"+rs.getString(4)+"\t"+rs.getString(5)+"\t"+rs.getDouble(6)+"\t"+rs.getInt(7));
-                                }
-                                System.out.println("Do you want to Add any item to Cart(yes/no)");
-                                String ans = sc.next().toLowerCase();
-                                if(ans.equals("yes"))
-                                {
-                                    System.out.println("Enter product_id of product ");
-                                    int p_id = sc.nextInt();
-
-                                    rs.beforeFirst();
-                                    int quantity = 0 ;
-                                    boolean found = false;
-                                    boolean sufficientstock = false;
-                                    while (rs.next())
-                                    {
-
-                                        if(rs.getInt(1)==p_id)
-                                        {
-                                            System.out.println("founded");
-                                            System.out.println("Enter Quantity to be added to Cart ");
-                                            quantity = sc.nextInt();
-                                            if(rs.getInt(7)>quantity)
-                                            {
-                                                sufficientstock = true;
-                                            }
-                                            found = true;
-                                            break;
-                                        }
-                                    }
-                                    if(found && sufficientstock)
-                                    {
-                                        String insert = "insert into cart(product_id,product_name,description,price,quantity,user_id) values(?,?,?,?,?,?)";                                        PreparedStatement ps1 = con.prepareStatement(insert);
-                                        ps1.setInt(1,rs.getInt(1));
-                                        ps1.setString(2, rs.getString(4));
-                                        ps1.setString(3, rs.getString(5));
-                                        ps1.setDouble(4,rs.getDouble(6));
-                                        ps1.setInt(5,quantity);
-                                        ps1.setInt(6,User.getCurrentUser().getUserId());
-                                        ps1.executeUpdate();
-                                    }
-                                    else
-                                    {
-                                        System.out.println("not founded");
-                                    }
-                                }break;
-                            case 2:String select1 = "select * from product where category_id = ? and subcategory_id = ? ";
-                                PreparedStatement ps1 = con.prepareStatement(select1,ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_READ_ONLY);
-                                ps1.setInt(1,4);
-                                ps1.setInt(2,402);
-                                //  ps1.setInt(2,101);
-                                ResultSet rs1 = ps1.executeQuery();
-                                while(rs1.next())
-                                {
-                                    System.out.println(rs1.getInt(1)+"\t"+rs1.getInt(2)+"\t"+rs1.getInt(3)+"\t"+rs1.getString(4)+"\t"+rs1.getString(5)+"\t"+rs1.getDouble(6)+"\t"+rs1.getInt(7));
-                                }
-                                System.out.println("Do you want to Add any item to Cart(yes/no)");
-                                String ans1 = sc.next().toLowerCase();
-                                if(ans1.equals("yes"))
-                                {
-                                    System.out.println("Enter product_id of product ");
-                                    int p_id = sc.nextInt();
-
-                                    rs1.beforeFirst();
-                                    int quantity = 0 ;
-                                    boolean found = false;
-                                    boolean sufficientstock = false;
-                                    while (rs1.next())
-                                    {
-
-                                        if(rs1.getInt(1)==p_id)
-                                        {
-                                            System.out.println("founded");
-                                            System.out.println("Enter Quantity to be added to Cart ");
-                                            quantity = sc.nextInt();
-                                            if(rs1.getInt(7)>quantity)
-                                            {
-                                                sufficientstock = true;
-                                            }
-                                            found = true;
-                                            break;
-                                        }
-                                    }
-                                    if(found && sufficientstock)
-                                    {
-                                        String insert = "insert into cart(product_id,product_name,description,price,quantity,user_id) values(?,?,?,?,?,?)";                                        PreparedStatement ps2 = con.prepareStatement(insert);
-                                        ps2.setInt(1,rs1.getInt(1));
-                                        ps2.setString(2, rs1.getString(4));
-                                        ps2.setString(3, rs1.getString(5));
-                                        ps2.setDouble(4,rs1.getDouble(6));
-                                        ps2.setInt(5,quantity);
-                                        ps2.setInt(6,User.getCurrentUser().getUserId());
-                                        ps2.executeUpdate();
-                                    }
-                                    else
-                                    {
-                                        System.out.println("not founded");
-                                    }
-                                }break;
-                            case 3:
-                                System.out.println("Exiting");break;
-                            default:
-                                System.out.println("Invalid Choice");
-                                break;
-                        }
-                    }
-                    while (choice4!=3);
-                    break;
-
-                case 5:
-                    int choice5 = 0;
-                    do {
-                        System.out.println("1 - Cookware");
-                        System.out.println("2 - Dining");
-                        System.out.println("3 - Exit");
-                        System.out.println("Enter your choice - ");
-                        choice5 = sc.nextInt();
-                        switch (choice5)
-                        {
-                            case 1: String select = "select * from product where category_id = ? and subcategory_id = ? ";
-                                PreparedStatement ps = con.prepareStatement(select,ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_READ_ONLY);
-                                ps.setInt(1,5);
-                                ps.setInt(2,501);
-                                // ps.setInt(2,101);
-                                ResultSet rs = ps.executeQuery();
-                                while(rs.next())
-                                {
-                                    System.out.println(rs.getInt(1)+"\t"+rs.getInt(2)+"\t"+rs.getInt(3)+"\t"+rs.getString(4)+"\t"+rs.getString(5)+"\t"+rs.getDouble(6)+"\t"+rs.getInt(7));
-                                }
-                                System.out.println("Do you want to Add any item to Cart(yes/no)");
-                                String ans = sc.next().toLowerCase();
-                                if(ans.equals("yes"))
-                                {
-                                    System.out.println("Enter product_id of product ");
-                                    int p_id = sc.nextInt();
-
-                                    rs.beforeFirst();
-                                    int quantity = 0 ;
-                                    boolean found = false;
-                                    boolean sufficientstock = false;
-                                    while (rs.next())
-                                    {
-
-                                        if(rs.getInt(1)==p_id)
-                                        {
-                                            System.out.println("founded");
-                                            System.out.println("Enter Quantity to be added to Cart ");
-                                            quantity = sc.nextInt();
-                                            if(rs.getInt(7)>quantity)
-                                            {
-                                                sufficientstock = true;
-                                            }
-                                            found = true;
-                                            break;
-                                        }
-                                    }
-                                    if(found && sufficientstock)
-                                    {
-                                        String insert = "insert into cart(product_id,product_name,description,price,quantity,user_id) values(?,?,?,?,?,?)";                                        PreparedStatement ps1 = con.prepareStatement(insert);
-                                        ps1.setInt(1,rs.getInt(1));
-                                        ps1.setString(2, rs.getString(4));
-                                        ps1.setString(3, rs.getString(5));
-                                        ps1.setDouble(4,rs.getDouble(6));
-                                        ps1.setInt(5,quantity);
-                                        ps1.setInt(6,User.getCurrentUser().getUserId());
-                                        ps1.executeUpdate();
-                                    }
-                                    else
-                                    {
-                                        System.out.println("not founded");
-                                    }
-                                }break;
-                            case 2: String select1 = "select * from product where category_id = ? and subcategory_id = ?";
-                                PreparedStatement ps1 = con.prepareStatement(select1,ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_READ_ONLY);
-                                ps1.setInt(1,5);
-                                ps1.setInt(2,502);
-                                // ps1.setInt(2,101);
-                                ResultSet rs1 = ps1.executeQuery();
-                                while(rs1.next())
-                                {
-                                    System.out.println(rs1.getInt(1)+"\t"+rs1.getInt(2)+"\t"+rs1.getInt(3)+"\t"+rs1.getString(4)+"\t"+rs1.getString(5)+"\t"+rs1.getDouble(6)+"\t"+rs1.getInt(7));
-                                }
-                                System.out.println("Do you want to Add any item to Cart(yes/no)");
-                                String ans1 = sc.next().toLowerCase();
-                                if(ans1.equals("yes"))
-                                {
-                                    System.out.println("Enter product_id of product ");
-                                    int p_id = sc.nextInt();
-
-                                    rs1.beforeFirst();
-                                    int quantity = 0 ;
-                                    boolean found = false;
-                                    boolean sufficientstock = false;
-                                    while (rs1.next())
-                                    {
-
-                                        if(rs1.getInt(1)==p_id)
-                                        {
-                                            System.out.println("founded");
-                                            System.out.println("Enter Quantity to be added to Cart ");
-                                            quantity = sc.nextInt();
-                                            if(rs1.getInt(7)>quantity)
-                                            {
-                                                sufficientstock = true;
-                                            }
-                                            found = true;
-                                            break;
-                                        }
-                                    }
-                                    if(found && sufficientstock)
-                                    {
-                                        String insert = "insert into cart(product_id,product_name,description,price,quantity,user_id) values(?,?,?,?,?,?)";                                        PreparedStatement ps2 = con.prepareStatement(insert);
-                                        ps2.setInt(1,rs1.getInt(1));
-                                        ps2.setString(2, rs1.getString(4));
-                                        ps2.setString(3, rs1.getString(5));
-                                        ps2.setDouble(4,rs1.getDouble(6));
-                                        ps2.setInt(5,quantity);
-                                        ps2.setInt(6,User.getCurrentUser().getUserId());
-                                        ps2.executeUpdate();
-                                    }
-                                    else
-                                    {
-                                        System.out.println("not founded");
-                                    }
-                                }break;
-                            case 3:
-                                System.out.println("Exiting"); break;
-                            default:
-                                System.out.println("Invalid Choice");
-                                break;
-                        }
-                    }
-                    while (choice5!=3);
-                    break;
-
-                case 6:
-                    int choice6 = 0;
-                    do {
-                        System.out.println("1 - Notebooks");
-                        System.out.println("2 - Pens");
-                        System.out.println("3 - Exit");
-                        System.out.println("Enter your choice - ");
-                        choice6 = sc.nextInt();
-                        switch (choice6)
-                        {
-                            case 1:String select = "select * from product where category_id = ? and subcategory_id = ? ";
-                                PreparedStatement ps = con.prepareStatement(select,ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_READ_ONLY);
-                                ps.setInt(1,6);
-                                ps.setInt(2,601);
-                                // ps.setInt(2,101);
-                                ResultSet rs = ps.executeQuery();
-                                while(rs.next())
-                                {
-                                    System.out.println(rs.getInt(1)+"\t"+rs.getInt(2)+"\t"+rs.getInt(3)+"\t"+rs.getString(4)+"\t"+rs.getString(5)+"\t"+rs.getDouble(6)+"\t"+rs.getInt(7));
-                                }
-                                System.out.println("Do you want to Add any item to Cart(yes/no)");
-                                String ans = sc.next().toLowerCase();
-                                if(ans.equals("yes"))
-                                {
-                                    System.out.println("Enter product_id of product ");
-                                    int p_id = sc.nextInt();
-
-                                    rs.beforeFirst();
-                                    int quantity = 0 ;
-                                    boolean found = false;
-                                    boolean sufficientstock = false;
-                                    while (rs.next())
-                                    {
-
-                                        if(rs.getInt(1)==p_id)
-                                        {
-                                            System.out.println("founded");
-                                            System.out.println("Enter Quantity to be added to Cart ");
-                                            quantity = sc.nextInt();
-                                            if(rs.getInt(7)>quantity)
-                                            {
-                                                sufficientstock = true;
-                                            }
-                                            found = true;
-                                            break;
-                                        }
-                                    }
-                                    if(found && sufficientstock)
-                                    {
-                                        String insert = "insert into cart(product_id,product_name,description,price,quantity,user_id) values(?,?,?,?,?,?)";                                        PreparedStatement ps1 = con.prepareStatement(insert);
-                                        ps1.setInt(1,rs.getInt(1));
-                                        ps1.setString(2, rs.getString(4));
-                                        ps1.setString(3, rs.getString(5));
-                                        ps1.setDouble(4,rs.getDouble(6));
-                                        ps1.setInt(5,quantity);
-                                        ps1.setInt(6,User.getCurrentUser().getUserId());
-                                        ps1.executeUpdate();
-                                    }
-                                    else
-                                    {
-                                        System.out.println("not founded");
-                                    }
-                                }break;
-                            case 2: String select1 = "select * from product where category_id = ? and subcategory_id = ? ";
-                                PreparedStatement ps1 = con.prepareStatement(select1,ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_READ_ONLY);
-                                ps1.setInt(1,6);
-                                ps1.setInt(2,602);
-                                // ps1.setInt(2,101);
-                                ResultSet rs1 = ps1.executeQuery();
-                                while(rs1.next())
-                                {
-                                    System.out.println(rs1.getInt(1)+"\t"+rs1.getInt(2)+"\t"+rs1.getInt(3)+"\t"+rs1.getString(4)+"\t"+rs1.getString(5)+"\t"+rs1.getDouble(6)+"\t"+rs1.getInt(7));
-                                }
-                                System.out.println("Do you want to Add any item to Cart(yes/no)");
-                                String ans1 = sc.next().toLowerCase();
-                                if(ans1.equals("yes"))
-                                {
-                                    System.out.println("Enter product_id of product ");
-                                    int p_id = sc.nextInt();
-
-                                    rs1.beforeFirst();
-                                    int quantity = 0 ;
-                                    boolean found = false;
-                                    boolean sufficientstock = false;
-                                    while (rs1.next())
-                                    {
-
-                                        if(rs1.getInt(1)==p_id)
-                                        {
-                                            System.out.println("founded");
-                                            System.out.println("Enter Quantity to be added to Cart ");
-                                            quantity = sc.nextInt();
-                                            if(rs1.getInt(7)>quantity)
-                                            {
-                                                sufficientstock = true;
-                                            }
-                                            found = true;
-                                            break;
-                                        }
-                                    }
-                                    if(found && sufficientstock)
-                                    {
-                                        String insert = "insert into cart(product_id,product_name,description,price,quantity,user_id) values(?,?,?,?,?,?)";                                        PreparedStatement ps2 = con.prepareStatement(insert);
-                                        ps2.setInt(1,rs1.getInt(1));
-                                        ps2.setString(2, rs1.getString(4));
-                                        ps2.setString(3, rs1.getString(5));
-                                        ps2.setDouble(4,rs1.getDouble(6));
-                                        ps2.setInt(5,quantity);
-                                        ps2.setInt(6,User.getCurrentUser().getUserId());
-                                        ps2.executeUpdate();
-                                    }
-                                    else
-                                    {
-                                        System.out.println("not founded");
-                                    }
-                                }break;
-                            case 3:
-                                System.out.println("Exiting");break;
-                            default:
-                                System.out.println("Invalid Choice");
-                        }
-                    }
-                    while (choice6!=3);
-
-
-
-                    break;
-                case 7:
-                    int choice7 = 0;
-                    do {
-                        System.out.println("1 - Men's Wear");
-                        System.out.println("2 - Women's Wear");
-                        System.out.println("3 - Exit");
-                        System.out.println("Enter your Choice - ");
-                        choice7 = sc.nextInt();
-                        switch (choice7)
-                        {
-                            case 1: String select = "select * from product where category_id = ? and subcategory_id = ? ";
-                                PreparedStatement ps = con.prepareStatement(select,ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_READ_ONLY);
-                                ps.setInt(1,7);
-                                ps.setInt(2,701);
-                                //ps.setInt(2,101);
-                                ResultSet rs = ps.executeQuery();
-                                while(rs.next())
-                                {
-                                    System.out.println(rs.getInt(1)+"\t"+rs.getInt(2)+"\t"+rs.getInt(3)+"\t"+rs.getString(4)+"\t"+rs.getString(5)+"\t"+rs.getDouble(6)+"\t"+rs.getInt(7));
-                                }
-                                System.out.println("Do you want to Add any item to Cart(yes/no)");
-                                String ans = sc.next().toLowerCase();
-                                if(ans.equals("yes"))
-                                {
-                                    System.out.println("Enter product_id of product ");
-                                    int p_id = sc.nextInt();
-
-                                    rs.beforeFirst();
-                                    int quantity = 0 ;
-                                    boolean found = false;
-                                    boolean sufficientstock = false;
-                                    while (rs.next())
-                                    {
-
-                                        if(rs.getInt(1)==p_id)
-                                        {
-                                            System.out.println("founded");
-                                            System.out.println("Enter Quantity to be added to Cart ");
-                                            quantity = sc.nextInt();
-                                            if(rs.getInt(7)>quantity)
-                                            {
-                                                sufficientstock = true;
-                                            }
-                                            found = true;
-                                            break;
-                                        }
-                                    }
-                                    if(found && sufficientstock)
-                                    {
-                                        String insert = "insert into cart(product_id,product_name,description,price,quantity,user_id) values(?,?,?,?,?,?)";                                        PreparedStatement ps1 = con.prepareStatement(insert);
-                                        ps1.setInt(1,rs.getInt(1));
-                                        ps1.setString(2, rs.getString(4));
-                                        ps1.setString(3, rs.getString(5));
-                                        ps1.setDouble(4,rs.getDouble(6));
-                                        ps1.setInt(5,quantity);
-                                        ps1.setInt(6,User.getCurrentUser().getUserId());
-                                        ps1.executeUpdate();
-                                    }
-                                    else
-                                    {
-                                        System.out.println("not founded");
-                                    }
-                                }break;
-                            case 2: String select1 = "select * from product where category_id = ? and subcategory_id = ? ";
-                                PreparedStatement ps1 = con.prepareStatement(select1,ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_READ_ONLY);
-                                ps1.setInt(1,7);
-                                ps1.setInt(2,702);
-                                //  ps1.setInt(2,101);
-                                ResultSet rs1 = ps1.executeQuery();
-                                while(rs1.next())
-                                {
-                                    System.out.println(rs1.getInt(1)+"\t"+rs1.getInt(2)+"\t"+rs1.getInt(3)+"\t"+rs1.getString(4)+"\t"+rs1.getString(5)+"\t"+rs1.getDouble(6)+"\t"+rs1.getInt(7));
-                                }
-                                System.out.println("Do you want to Add any item to Cart(yes/no)");
-                                String ans1 = sc.next().toLowerCase();
-                                if(ans1.equals("yes"))
-                                {
-                                    System.out.println("Enter product_id of product ");
-                                    int p_id = sc.nextInt();
-
-                                    rs1.beforeFirst();
-                                    int quantity = 0 ;
-                                    boolean found = false;
-                                    boolean sufficientstock = false;
-                                    while (rs1.next())
-                                    {
-
-                                        if(rs1.getInt(1)==p_id)
-                                        {
-                                            System.out.println("founded");
-                                            System.out.println("Enter Quantity to be added to Cart ");
-                                            quantity = sc.nextInt();
-                                            if(rs1.getInt(7)>quantity)
-                                            {
-                                                sufficientstock = true;
-                                            }
-                                            found = true;
-                                            break;
-                                        }
-                                    }
-                                    if(found && sufficientstock)
-                                    {
-                                        String insert = "insert into cart(product_id,product_name,description,price,quantity,user_id) values(?,?,?,?,?,?)";                                        PreparedStatement ps2 = con.prepareStatement(insert);
-                                        ps2.setInt(1,rs1.getInt(1));
-                                        ps2.setString(2, rs1.getString(4));
-                                        ps2.setString(3, rs1.getString(5));
-                                        ps2.setDouble(4,rs1.getDouble(6));
-                                        ps2.setInt(5,quantity);
-                                        ps2.setInt(6,User.getCurrentUser().getUserId());
-                                        ps2.executeUpdate();
-                                    }
-                                    else
-                                    {
-                                        System.out.println("not founded");
-                                    }
-                                }break;
-                            case 3:
-                                System.out.println("Exiting");break;
-                            default:
-                                System.out.println("Invalid Choice");
-                        }
-                    }while (choice7!=3);
-                    break;
-
-                case 8:
-                    int choice8 = 0;
-                    do {
-                        System.out.println("1 - Floor Cleaner");
-                        System.out.println("2 - Detergents");
-                        System.out.println("3 - Exit");
-                        System.out.println("Enter your Choice");
-                        choice8 = sc.nextInt();
-                        switch (choice8) {
+                        switch (choice4) {
                             case 1:
                                 String select = "select * from product where category_id = ? and subcategory_id = ? ";
-                                PreparedStatement ps = con.prepareStatement(select,ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_READ_ONLY);
-                                ps.setInt(1, 8);
-                                ps.setInt(2,801);
+                                PreparedStatement ps = con.prepareStatement(select, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+                                ps.setInt(1, 4);
+                                ps.setInt(2, 401);
                                 //ps.setInt(2,101);
                                 ResultSet rs = ps.executeQuery();
                                 while (rs.next()) {
@@ -1386,13 +808,14 @@ public class CustomerManagement extends User {
                                         }
                                     }
                                     if (found && sufficientstock) {
-                                        String insert = "insert into cart(product_id,product_name,description,price,quantity,user_id) values(?,?,?,?,?,?)";                                        PreparedStatement ps1 = con.prepareStatement(insert);
+                                        String insert = "insert into cart(product_id,product_name,description,price,quantity,user_id) values(?,?,?,?,?,?)";
+                                        PreparedStatement ps1 = con.prepareStatement(insert);
                                         ps1.setInt(1, rs.getInt(1));
                                         ps1.setString(2, rs.getString(4));
                                         ps1.setString(3, rs.getString(5));
                                         ps1.setDouble(4, rs.getDouble(6));
                                         ps1.setInt(5, quantity);
-                                        ps1.setInt(6,User.getCurrentUser().getUserId());
+                                        ps1.setInt(6, User.getCurrentUser().getUserId());
                                         ps1.executeUpdate();
                                     } else {
                                         System.out.println("not founded");
@@ -1400,10 +823,126 @@ public class CustomerManagement extends User {
                                 }
                                 break;
                             case 2:
-                                String select1 = "select * from product where category_id = ? and subcategory_id = ?  ";
-                                PreparedStatement ps1 = con.prepareStatement(select1,ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_READ_ONLY);
-                                ps1.setInt(1, 8);
-                                ps1.setInt(2,802);
+                                String select1 = "select * from product where category_id = ? and subcategory_id = ? ";
+                                PreparedStatement ps1 = con.prepareStatement(select1, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+                                ps1.setInt(1, 4);
+                                ps1.setInt(2, 402);
+                                //  ps1.setInt(2,101);
+                                ResultSet rs1 = ps1.executeQuery();
+                                while (rs1.next()) {
+                                    System.out.println(rs1.getInt(1) + "\t" + rs1.getInt(2) + "\t" + rs1.getInt(3) + "\t" + rs1.getString(4) + "\t" + rs1.getString(5) + "\t" + rs1.getDouble(6) + "\t" + rs1.getInt(7));
+                                }
+                                System.out.println("Do you want to Add any item to Cart(yes/no)");
+                                String ans1 = sc.next().toLowerCase();
+                                if (ans1.equals("yes")) {
+                                    System.out.println("Enter product_id of product ");
+                                    int p_id = sc.nextInt();
+
+                                    rs1.beforeFirst();
+                                    int quantity = 0;
+                                    boolean found = false;
+                                    boolean sufficientstock = false;
+                                    while (rs1.next()) {
+
+                                        if (rs1.getInt(1) == p_id) {
+                                            System.out.println("founded");
+                                            System.out.println("Enter Quantity to be added to Cart ");
+                                            quantity = sc.nextInt();
+                                            if (rs1.getInt(7) > quantity) {
+                                                sufficientstock = true;
+                                            }
+                                            found = true;
+                                            break;
+                                        }
+                                    }
+                                    if (found && sufficientstock) {
+                                        String insert = "insert into cart(product_id,product_name,description,price,quantity,user_id) values(?,?,?,?,?,?)";
+                                        PreparedStatement ps2 = con.prepareStatement(insert);
+                                        ps2.setInt(1, rs1.getInt(1));
+                                        ps2.setString(2, rs1.getString(4));
+                                        ps2.setString(3, rs1.getString(5));
+                                        ps2.setDouble(4, rs1.getDouble(6));
+                                        ps2.setInt(5, quantity);
+                                        ps2.setInt(6, User.getCurrentUser().getUserId());
+                                        ps2.executeUpdate();
+                                    } else {
+                                        System.out.println("not founded");
+                                    }
+                                }
+                                break;
+                            case 3:
+                                System.out.println("Exiting");
+                                break;
+                            default:
+                                System.out.println("Invalid Choice");
+                                break;
+                        }
+                    }
+                    while (choice4 != 3);
+                    break;
+
+                case 5:
+                    int choice5 = 0;
+                    do {
+                        System.out.println("1 - Cookware");
+                        System.out.println("2 - Dining");
+                        System.out.println("3 - Exit");
+                        System.out.println("Enter your choice - ");
+                        choice5 = sc.nextInt();
+                        switch (choice5) {
+                            case 1:
+                                String select = "select * from product where category_id = ? and subcategory_id = ? ";
+                                PreparedStatement ps = con.prepareStatement(select, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+                                ps.setInt(1, 5);
+                                ps.setInt(2, 501);
+                                // ps.setInt(2,101);
+                                ResultSet rs = ps.executeQuery();
+                                while (rs.next()) {
+                                    System.out.println(rs.getInt(1) + "\t" + rs.getInt(2) + "\t" + rs.getInt(3) + "\t" + rs.getString(4) + "\t" + rs.getString(5) + "\t" + rs.getDouble(6) + "\t" + rs.getInt(7));
+                                }
+                                System.out.println("Do you want to Add any item to Cart(yes/no)");
+                                String ans = sc.next().toLowerCase();
+                                if (ans.equals("yes")) {
+                                    System.out.println("Enter product_id of product ");
+                                    int p_id = sc.nextInt();
+
+                                    rs.beforeFirst();
+                                    int quantity = 0;
+                                    boolean found = false;
+                                    boolean sufficientstock = false;
+                                    while (rs.next()) {
+
+                                        if (rs.getInt(1) == p_id) {
+                                            System.out.println("founded");
+                                            System.out.println("Enter Quantity to be added to Cart ");
+                                            quantity = sc.nextInt();
+                                            if (rs.getInt(7) > quantity) {
+                                                sufficientstock = true;
+                                            }
+                                            found = true;
+                                            break;
+                                        }
+                                    }
+                                    if (found && sufficientstock) {
+                                        String insert = "insert into cart(product_id,product_name,description,price,quantity,user_id) values(?,?,?,?,?,?)";
+                                        PreparedStatement ps1 = con.prepareStatement(insert);
+                                        ps1.setInt(1, rs.getInt(1));
+                                        ps1.setString(2, rs.getString(4));
+                                        ps1.setString(3, rs.getString(5));
+                                        ps1.setDouble(4, rs.getDouble(6));
+                                        ps1.setInt(5, quantity);
+                                        ps1.setInt(6, User.getCurrentUser().getUserId());
+                                        ps1.executeUpdate();
+                                    } else {
+                                        System.out.println("not founded");
+                                    }
+                                }
+                                break;
+                            case 2:
+                                String select1 = "select * from product where category_id = ? and subcategory_id = ?";
+                                PreparedStatement ps1 = con.prepareStatement(select1, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+                                ps1.setInt(1, 5);
+                                ps1.setInt(2, 502);
                                 // ps1.setInt(2,101);
                                 ResultSet rs1 = ps1.executeQuery();
                                 while (rs1.next()) {
@@ -1433,13 +972,360 @@ public class CustomerManagement extends User {
                                         }
                                     }
                                     if (found && sufficientstock) {
-                                        String insert = "insert into cart(product_id,product_name,description,price,quantity,user_id) values(?,?,?,?,?,?)";                                        PreparedStatement ps2 = con.prepareStatement(insert);
+                                        String insert = "insert into cart(product_id,product_name,description,price,quantity,user_id) values(?,?,?,?,?,?)";
+                                        PreparedStatement ps2 = con.prepareStatement(insert);
                                         ps2.setInt(1, rs1.getInt(1));
                                         ps2.setString(2, rs1.getString(4));
                                         ps2.setString(3, rs1.getString(5));
                                         ps2.setDouble(4, rs1.getDouble(6));
                                         ps2.setInt(5, quantity);
-                                        ps2.setInt(6,User.getCurrentUser().getUserId());
+                                        ps2.setInt(6, User.getCurrentUser().getUserId());
+                                        ps2.executeUpdate();
+                                    } else {
+                                        System.out.println("not founded");
+                                    }
+                                }
+                                break;
+                            case 3:
+                                System.out.println("Exiting");
+                                break;
+                            default:
+                                System.out.println("Invalid Choice");
+                                break;
+                        }
+                    }
+                    while (choice5 != 3);
+                    break;
+
+                case 6:
+                    int choice6 = 0;
+                    do {
+                        System.out.println("1 - Notebooks");
+                        System.out.println("2 - Pens");
+                        System.out.println("3 - Exit");
+                        System.out.println("Enter your choice - ");
+                        choice6 = sc.nextInt();
+                        switch (choice6) {
+                            case 1:
+                                String select = "select * from product where category_id = ? and subcategory_id = ? ";
+                                PreparedStatement ps = con.prepareStatement(select, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+                                ps.setInt(1, 6);
+                                ps.setInt(2, 601);
+                                // ps.setInt(2,101);
+                                ResultSet rs = ps.executeQuery();
+                                while (rs.next()) {
+                                    System.out.println(rs.getInt(1) + "\t" + rs.getInt(2) + "\t" + rs.getInt(3) + "\t" + rs.getString(4) + "\t" + rs.getString(5) + "\t" + rs.getDouble(6) + "\t" + rs.getInt(7));
+                                }
+                                System.out.println("Do you want to Add any item to Cart(yes/no)");
+                                String ans = sc.next().toLowerCase();
+                                if (ans.equals("yes")) {
+                                    System.out.println("Enter product_id of product ");
+                                    int p_id = sc.nextInt();
+
+                                    rs.beforeFirst();
+                                    int quantity = 0;
+                                    boolean found = false;
+                                    boolean sufficientstock = false;
+                                    while (rs.next()) {
+
+                                        if (rs.getInt(1) == p_id) {
+                                            System.out.println("founded");
+                                            System.out.println("Enter Quantity to be added to Cart ");
+                                            quantity = sc.nextInt();
+                                            if (rs.getInt(7) > quantity) {
+                                                sufficientstock = true;
+                                            }
+                                            found = true;
+                                            break;
+                                        }
+                                    }
+                                    if (found && sufficientstock) {
+                                        String insert = "insert into cart(product_id,product_name,description,price,quantity,user_id) values(?,?,?,?,?,?)";
+                                        PreparedStatement ps1 = con.prepareStatement(insert);
+                                        ps1.setInt(1, rs.getInt(1));
+                                        ps1.setString(2, rs.getString(4));
+                                        ps1.setString(3, rs.getString(5));
+                                        ps1.setDouble(4, rs.getDouble(6));
+                                        ps1.setInt(5, quantity);
+                                        ps1.setInt(6, User.getCurrentUser().getUserId());
+                                        ps1.executeUpdate();
+                                    } else {
+                                        System.out.println("not founded");
+                                    }
+                                }
+                                break;
+                            case 2:
+                                String select1 = "select * from product where category_id = ? and subcategory_id = ? ";
+                                PreparedStatement ps1 = con.prepareStatement(select1, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+                                ps1.setInt(1, 6);
+                                ps1.setInt(2, 602);
+                                // ps1.setInt(2,101);
+                                ResultSet rs1 = ps1.executeQuery();
+                                while (rs1.next()) {
+                                    System.out.println(rs1.getInt(1) + "\t" + rs1.getInt(2) + "\t" + rs1.getInt(3) + "\t" + rs1.getString(4) + "\t" + rs1.getString(5) + "\t" + rs1.getDouble(6) + "\t" + rs1.getInt(7));
+                                }
+                                System.out.println("Do you want to Add any item to Cart(yes/no)");
+                                String ans1 = sc.next().toLowerCase();
+                                if (ans1.equals("yes")) {
+                                    System.out.println("Enter product_id of product ");
+                                    int p_id = sc.nextInt();
+
+                                    rs1.beforeFirst();
+                                    int quantity = 0;
+                                    boolean found = false;
+                                    boolean sufficientstock = false;
+                                    while (rs1.next()) {
+
+                                        if (rs1.getInt(1) == p_id) {
+                                            System.out.println("founded");
+                                            System.out.println("Enter Quantity to be added to Cart ");
+                                            quantity = sc.nextInt();
+                                            if (rs1.getInt(7) > quantity) {
+                                                sufficientstock = true;
+                                            }
+                                            found = true;
+                                            break;
+                                        }
+                                    }
+                                    if (found && sufficientstock) {
+                                        String insert = "insert into cart(product_id,product_name,description,price,quantity,user_id) values(?,?,?,?,?,?)";
+                                        PreparedStatement ps2 = con.prepareStatement(insert);
+                                        ps2.setInt(1, rs1.getInt(1));
+                                        ps2.setString(2, rs1.getString(4));
+                                        ps2.setString(3, rs1.getString(5));
+                                        ps2.setDouble(4, rs1.getDouble(6));
+                                        ps2.setInt(5, quantity);
+                                        ps2.setInt(6, User.getCurrentUser().getUserId());
+                                        ps2.executeUpdate();
+                                    } else {
+                                        System.out.println("not founded");
+                                    }
+                                }
+                                break;
+                            case 3:
+                                System.out.println("Exiting");
+                                break;
+                            default:
+                                System.out.println("Invalid Choice");
+                        }
+                    }
+                    while (choice6 != 3);
+
+
+                    break;
+                case 7:
+                    int choice7 = 0;
+                    do {
+                        System.out.println("1 - Men's Wear");
+                        System.out.println("2 - Women's Wear");
+                        System.out.println("3 - Exit");
+                        System.out.println("Enter your Choice - ");
+                        choice7 = sc.nextInt();
+                        switch (choice7) {
+                            case 1:
+                                String select = "select * from product where category_id = ? and subcategory_id = ? ";
+                                PreparedStatement ps = con.prepareStatement(select, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+                                ps.setInt(1, 7);
+                                ps.setInt(2, 701);
+                                //ps.setInt(2,101);
+                                ResultSet rs = ps.executeQuery();
+                                while (rs.next()) {
+                                    System.out.println(rs.getInt(1) + "\t" + rs.getInt(2) + "\t" + rs.getInt(3) + "\t" + rs.getString(4) + "\t" + rs.getString(5) + "\t" + rs.getDouble(6) + "\t" + rs.getInt(7));
+                                }
+                                System.out.println("Do you want to Add any item to Cart(yes/no)");
+                                String ans = sc.next().toLowerCase();
+                                if (ans.equals("yes")) {
+                                    System.out.println("Enter product_id of product ");
+                                    int p_id = sc.nextInt();
+
+                                    rs.beforeFirst();
+                                    int quantity = 0;
+                                    boolean found = false;
+                                    boolean sufficientstock = false;
+                                    while (rs.next()) {
+
+                                        if (rs.getInt(1) == p_id) {
+                                            System.out.println("founded");
+                                            System.out.println("Enter Quantity to be added to Cart ");
+                                            quantity = sc.nextInt();
+                                            if (rs.getInt(7) > quantity) {
+                                                sufficientstock = true;
+                                            }
+                                            found = true;
+                                            break;
+                                        }
+                                    }
+                                    if (found && sufficientstock) {
+                                        String insert = "insert into cart(product_id,product_name,description,price,quantity,user_id) values(?,?,?,?,?,?)";
+                                        PreparedStatement ps1 = con.prepareStatement(insert);
+                                        ps1.setInt(1, rs.getInt(1));
+                                        ps1.setString(2, rs.getString(4));
+                                        ps1.setString(3, rs.getString(5));
+                                        ps1.setDouble(4, rs.getDouble(6));
+                                        ps1.setInt(5, quantity);
+                                        ps1.setInt(6, User.getCurrentUser().getUserId());
+                                        ps1.executeUpdate();
+                                    } else {
+                                        System.out.println("not founded");
+                                    }
+                                }
+                                break;
+                            case 2:
+                                String select1 = "select * from product where category_id = ? and subcategory_id = ? ";
+                                PreparedStatement ps1 = con.prepareStatement(select1, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+                                ps1.setInt(1, 7);
+                                ps1.setInt(2, 702);
+                                //  ps1.setInt(2,101);
+                                ResultSet rs1 = ps1.executeQuery();
+                                while (rs1.next()) {
+                                    System.out.println(rs1.getInt(1) + "\t" + rs1.getInt(2) + "\t" + rs1.getInt(3) + "\t" + rs1.getString(4) + "\t" + rs1.getString(5) + "\t" + rs1.getDouble(6) + "\t" + rs1.getInt(7));
+                                }
+                                System.out.println("Do you want to Add any item to Cart(yes/no)");
+                                String ans1 = sc.next().toLowerCase();
+                                if (ans1.equals("yes")) {
+                                    System.out.println("Enter product_id of product ");
+                                    int p_id = sc.nextInt();
+
+                                    rs1.beforeFirst();
+                                    int quantity = 0;
+                                    boolean found = false;
+                                    boolean sufficientstock = false;
+                                    while (rs1.next()) {
+
+                                        if (rs1.getInt(1) == p_id) {
+                                            System.out.println("founded");
+                                            System.out.println("Enter Quantity to be added to Cart ");
+                                            quantity = sc.nextInt();
+                                            if (rs1.getInt(7) > quantity) {
+                                                sufficientstock = true;
+                                            }
+                                            found = true;
+                                            break;
+                                        }
+                                    }
+                                    if (found && sufficientstock) {
+                                        String insert = "insert into cart(product_id,product_name,description,price,quantity,user_id) values(?,?,?,?,?,?)";
+                                        PreparedStatement ps2 = con.prepareStatement(insert);
+                                        ps2.setInt(1, rs1.getInt(1));
+                                        ps2.setString(2, rs1.getString(4));
+                                        ps2.setString(3, rs1.getString(5));
+                                        ps2.setDouble(4, rs1.getDouble(6));
+                                        ps2.setInt(5, quantity);
+                                        ps2.setInt(6, User.getCurrentUser().getUserId());
+                                        ps2.executeUpdate();
+                                    } else {
+                                        System.out.println("not founded");
+                                    }
+                                }
+                                break;
+                            case 3:
+                                System.out.println("Exiting");
+                                break;
+                            default:
+                                System.out.println("Invalid Choice");
+                        }
+                    } while (choice7 != 3);
+                    break;
+
+                case 8:
+                    int choice8 = 0;
+                    do {
+                        System.out.println("1 - Floor Cleaner");
+                        System.out.println("2 - Detergents");
+                        System.out.println("3 - Exit");
+                        System.out.println("Enter your Choice");
+                        choice8 = sc.nextInt();
+                        switch (choice8) {
+                            case 1:
+                                String select = "select * from product where category_id = ? and subcategory_id = ? ";
+                                PreparedStatement ps = con.prepareStatement(select, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+                                ps.setInt(1, 8);
+                                ps.setInt(2, 801);
+                                //ps.setInt(2,101);
+                                ResultSet rs = ps.executeQuery();
+                                while (rs.next()) {
+                                    System.out.println(rs.getInt(1) + "\t" + rs.getInt(2) + "\t" + rs.getInt(3) + "\t" + rs.getString(4) + "\t" + rs.getString(5) + "\t" + rs.getDouble(6) + "\t" + rs.getInt(7));
+                                }
+                                System.out.println("Do you want to Add any item to Cart(yes/no)");
+                                String ans = sc.next().toLowerCase();
+                                if (ans.equals("yes")) {
+                                    System.out.println("Enter product_id of product ");
+                                    int p_id = sc.nextInt();
+
+                                    rs.beforeFirst();
+                                    int quantity = 0;
+                                    boolean found = false;
+                                    boolean sufficientstock = false;
+                                    while (rs.next()) {
+
+                                        if (rs.getInt(1) == p_id) {
+                                            System.out.println("founded");
+                                            System.out.println("Enter Quantity to be added to Cart ");
+                                            quantity = sc.nextInt();
+                                            if (rs.getInt(7) > quantity) {
+                                                sufficientstock = true;
+                                            }
+                                            found = true;
+                                            break;
+                                        }
+                                    }
+                                    if (found && sufficientstock) {
+                                        String insert = "insert into cart(product_id,product_name,description,price,quantity,user_id) values(?,?,?,?,?,?)";
+                                        PreparedStatement ps1 = con.prepareStatement(insert);
+                                        ps1.setInt(1, rs.getInt(1));
+                                        ps1.setString(2, rs.getString(4));
+                                        ps1.setString(3, rs.getString(5));
+                                        ps1.setDouble(4, rs.getDouble(6));
+                                        ps1.setInt(5, quantity);
+                                        ps1.setInt(6, User.getCurrentUser().getUserId());
+                                        ps1.executeUpdate();
+                                    } else {
+                                        System.out.println("not founded");
+                                    }
+                                }
+                                break;
+                            case 2:
+                                String select1 = "select * from product where category_id = ? and subcategory_id = ?  ";
+                                PreparedStatement ps1 = con.prepareStatement(select1, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+                                ps1.setInt(1, 8);
+                                ps1.setInt(2, 802);
+                                // ps1.setInt(2,101);
+                                ResultSet rs1 = ps1.executeQuery();
+                                while (rs1.next()) {
+                                    System.out.println(rs1.getInt(1) + "\t" + rs1.getInt(2) + "\t" + rs1.getInt(3) + "\t" + rs1.getString(4) + "\t" + rs1.getString(5) + "\t" + rs1.getDouble(6) + "\t" + rs1.getInt(7));
+                                }
+                                System.out.println("Do you want to Add any item to Cart(yes/no)");
+                                String ans1 = sc.next().toLowerCase();
+                                if (ans1.equals("yes")) {
+                                    System.out.println("Enter product_id of product ");
+                                    int p_id = sc.nextInt();
+
+                                    rs1.beforeFirst();
+                                    int quantity = 0;
+                                    boolean found = false;
+                                    boolean sufficientstock = false;
+                                    while (rs1.next()) {
+
+                                        if (rs1.getInt(1) == p_id) {
+                                            System.out.println("founded");
+                                            System.out.println("Enter Quantity to be added to Cart ");
+                                            quantity = sc.nextInt();
+                                            if (rs1.getInt(7) > quantity) {
+                                                sufficientstock = true;
+                                            }
+                                            found = true;
+                                            break;
+                                        }
+                                    }
+                                    if (found && sufficientstock) {
+                                        String insert = "insert into cart(product_id,product_name,description,price,quantity,user_id) values(?,?,?,?,?,?)";
+                                        PreparedStatement ps2 = con.prepareStatement(insert);
+                                        ps2.setInt(1, rs1.getInt(1));
+                                        ps2.setString(2, rs1.getString(4));
+                                        ps2.setString(3, rs1.getString(5));
+                                        ps2.setDouble(4, rs1.getDouble(6));
+                                        ps2.setInt(5, quantity);
+                                        ps2.setInt(6, User.getCurrentUser().getUserId());
                                         ps2.executeUpdate();
 
                                     } else {
@@ -1448,24 +1334,24 @@ public class CustomerManagement extends User {
                                 }
                                 break;
                             case 3:
-                                System.out.println("Exit");break;
+                                System.out.println("Exit");
+                                break;
                             default:
                                 System.out.println("Invalid Choice");
                                 break;
                         }
                     }
-                    while (choice8!=3);
-
-
+                    while (choice8 != 3);
 
 
                     break;
-                case 9:break;
+                case 9:
+                    break;
                 default:
                     System.out.println("Invalid Choice");
             }
         }
-        while (choice!=9);
+        while (choice != 9);
 
     }
 
@@ -1473,7 +1359,7 @@ public class CustomerManagement extends User {
         System.out.println("1.FirstName\n2.LastName\n3.UserName\n4.MobileNo\n5.Password\n6.Add Address\n7.EXIT\n\nEnter your Choice : ");
         int currentUserId = 1;
         User user = loggedInUser.get(User.getCurrentUser().getUserId());
-       // System.out.println(User.getCurrentUser().getUserName());
+        // System.out.println(User.getCurrentUser().getUserName());
         int choice = sc.nextInt();
         switch (choice) {
             case 1:
@@ -1503,7 +1389,7 @@ public class CustomerManagement extends User {
                 user.setFirstName(newFirstName);
                 break;
             case 2:
-               // System.out.print("Enter new LastName : ");
+                // System.out.print("Enter new LastName : ");
                 String newLastName;
 
                 do {
@@ -1537,11 +1423,11 @@ public class CustomerManagement extends User {
                     updateStmt.executeUpdate();
                 }
                 System.out.println("✅ User Name Updated Successfully");
-               user.setUserName(newUserName);
+                user.setUserName(newUserName);
                 break;
             case 4://int currentUserId = 1;
-               User user1 = loggedInUser.get(User.getCurrentUser().getUserId());
-                String newmobileno ;
+                User user1 = loggedInUser.get(User.getCurrentUser().getUserId());
+                String newmobileno;
                 do {
                     System.out.print("Enter new MobileNumber : ");
                     newmobileno = sc.nextLine().trim();
@@ -1565,7 +1451,7 @@ public class CustomerManagement extends User {
             case 5:
                 //System.out.println(user.getPassword());
                 System.out.print("Enter new Password : ");
-                String newPassword ;
+                String newPassword;
                 while (true) {
                     System.out.print("Enter Password : ");
                     newPassword = sc.next();
@@ -1601,26 +1487,23 @@ public class CustomerManagement extends User {
     }
 
 
-    public static void viewCart() throws Exception
-    {
+    public static void viewCart() throws Exception {
         User user = loggedInUser.get(User.getCurrentUser().getUserId());
         String fetchCart = "SELECT p.product_id, p.product_name, c.quantity, c.price " +
                 "FROM cart c JOIN product p ON c.product_id = p.product_id where user_id = ?";
 
         try (PreparedStatement fetchCartItems = Database.getCon().prepareStatement(
-                fetchCart, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY))
-        {
-            fetchCartItems.setInt(1,User.getCurrentUser().getUserId());
+                fetchCart, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
+            fetchCartItems.setInt(1, User.getCurrentUser().getUserId());
             ResultSet rs = fetchCartItems.executeQuery();
 
             System.out.println("\n----------- 🛒 Your Cart -----------");
             boolean hasItems = false;
-            double  total = 0;
+            double total = 0;
 
 
             // First loop to display cart items
-            while (rs.next())
-            {
+            while (rs.next()) {
                 hasItems = true;
                 int productId = rs.getInt("product_id");
                 String productName = rs.getString("product_name");
@@ -1636,12 +1519,10 @@ public class CustomerManagement extends User {
                 System.out.println("Total          : ₹" + itemTotal);
                 System.out.println("-----------------------------------");
             }
-            if(hasItems)
-            {
+            if (hasItems) {
                 System.out.print("Do you want to update Cart details (yes/no) : ");
                 String ans = sc.next().toLowerCase();
-                if (ans.equals("yes"))
-                {
+                if (ans.equals("yes")) {
                     System.out.print("Enter Product ID to update quantity : ");
                     int updatePid = sc.nextInt();
                     System.out.print("Enter new quantity : ");
@@ -1674,11 +1555,8 @@ public class CustomerManagement extends User {
                 }
 
 
-
-
             }
-            if (!hasItems)
-            {
+            if (!hasItems) {
                 System.out.println("🛒 Your cart is empty.");
                 return;
             }
@@ -1691,8 +1569,7 @@ public class CustomerManagement extends User {
 
             int choice = sc.nextInt();
 
-            switch (choice)
-            {
+            switch (choice) {
                 case 1:
 
                     System.out.print("Enter Product ID to be ordered: ");
@@ -1701,19 +1578,15 @@ public class CustomerManagement extends User {
                     int cquantity = sc.nextInt();
                     String fetchQuantity = "select quantity from cart where product_id = ?";
                     PreparedStatement ps = Database.getCon().prepareStatement(fetchQuantity);
-                    ps.setInt(1,pid);
+                    ps.setInt(1, pid);
                     ResultSet crs = ps.executeQuery();
 //                    System.out.println();
 //                    boolean b = false;
-                    while (crs.next())
-                    {
+                    while (crs.next()) {
 //                        System.out.println();
-                        if(crs.getInt("quantity") >= cquantity)
-                        {
-                            payment(pid,cquantity);
-                        }
-                        else
-                        {
+                        if (crs.getInt("quantity") >= cquantity) {
+                            payment(pid, cquantity);
+                        } else {
                             System.out.println("Your cart item has not enough quantity!");
                             viewCart();
                         }
@@ -1790,9 +1663,10 @@ public class CustomerManagement extends User {
                                                 ps4.setInt(1, User.getCurrentUser().getUserId());
                                                 ResultSet rsOrder = ps4.executeQuery();
                                                 String orderPath = saveTicketFile(Auth.sessionOrderId);
-                                                FileWriter writer = new FileWriter(orderPath,true);                                                System.out.println(orderPath);
+                                                FileWriter writer = new FileWriter(orderPath, true);
+                                                System.out.println(orderPath);
 
-                                               // FileWriter writer = new FileWriter(orderPath);
+                                                // FileWriter writer = new FileWriter(orderPath);
                                                 writer.write("Orders for " + name + ":\n");
                                                 writer.write("--------------------------------------------------\n");
                                                 writer.write(String.format("%-10s %-12s %-20s %-8s %-12s %-15s\n",
@@ -1843,54 +1717,53 @@ public class CustomerManagement extends User {
                         }
                     }
 
-                           // Thread.sleep(5000);
-                            break;
-
+                    // Thread.sleep(5000);
+                    break;
 
 
                 case 2:
                     System.out.println("✅ Proceeding to checkout...");
                     checkOut();
-                   // Thread.sleep(5000);
+                    // Thread.sleep(5000);
                     break;
 
                 case 3:
                     System.out.println("🔙 Returning to previous menu...");
-                   // Thread.sleep(5000);
+                    // Thread.sleep(5000);
                     break;
 
                 default:
                     System.out.println("❌ Invalid choice! Please select 1, 2, or 3.");
-                  //  Thread.sleep(5000);
+                    //  Thread.sleep(5000);
             }
         }
     }
-    static final String Ticket_dir = "D:\\";
-    public static void ensureFolder()
-    {
-       // String pathName = "D:\\T4 Java\\Shopping-Cart-Inventory-Management-System";
+
+    public static void ensureFolder() {
+        // String pathName = "D:\\T4 Java\\Shopping-Cart-Inventory-Management-System";
         File dir = new File(Ticket_dir);
-        if(!dir.exists())
-        {
+        if (!dir.exists()) {
             dir.mkdirs();
         }
     }
-    static String saveTicketFile(String orderId)
-    {
-        int i = 1;
-        String fileName = "Bill_" + orderId + "_"  + ++i + ".txt";
-        String fullpath = Ticket_dir + fileName;
-        return fullpath;
+
+    static String saveTicketFile(String orderId) {
+        // Get current timestamp
+        LocalDateTime now = LocalDateTime.now();
+
+        // Format it as yyyyMMdd_HHMS (safe for filenames)
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
+        String timestamp = now.format(formatter);
+        String fileName = "Bill_" + orderId + "_" + timestamp + ".txt";
+        return Ticket_dir + fileName;
     }
 
-
-    private static void checkOut() throws Exception
-    {
+    private static void checkOut() throws Exception {
         User user = User.getCurrentUser();
         int currentUserId = 1;
         // User user = loggedInUser.get(currentUserId);
         //loggedInUser.put(currentUserId,user);
-        String fetchAddress = "SELECT * from address where user_id = ? " ;
+        String fetchAddress = "SELECT * from address where user_id = ? ";
         try (PreparedStatement fetchCartItems = Database.getCon().prepareStatement(fetchAddress)) {
             fetchCartItems.setInt(1, User.getCurrentUser().getUserId());
             ResultSet rs = fetchCartItems.executeQuery();
@@ -1900,7 +1773,7 @@ public class CustomerManagement extends User {
             while (rs.next()) {
                 String name = rs.getString("name");
                 String address = rs.getString("address_line_2");
-               // String area = rs.getString("area");
+                // String area = rs.getString("area");
                 String city = rs.getString("city");
                 String state = rs.getString("state");
                 int pincode = rs.getInt("pincode");
@@ -1908,7 +1781,7 @@ public class CustomerManagement extends User {
                 System.out.println("\n📦 Saved Address:");
                 System.out.println("Name           : " + name);
                 System.out.println("Address Line  : " + address);
-               // System.out.println("Area         : " + area);
+                // System.out.println("Area         : " + area);
                 System.out.println("City           : " + city);
                 System.out.println("State          : " + state);
                 System.out.println("Pin Code       : " + pincode);
@@ -1933,18 +1806,13 @@ public class CustomerManagement extends User {
         }
         System.out.println("Do you want to see your order(yes/no)");
         String ans = sc.next().toLowerCase();
-        if(ans.equals("yes"))
-        {
+        if (ans.equals("yes")) {
             viewOrders();
-            return;
-        }
-        else {
+        } else {
             //System.out.println("Revisit details");
             //checkOut();
-            return;
 
         }
-
 
 
     }
@@ -1952,13 +1820,12 @@ public class CustomerManagement extends User {
     public static void viewOrders() throws Exception {
         String fetchOrders = "Select * from orders where user_id = ? ";
         PreparedStatement ps = Database.getCon().prepareStatement(fetchOrders);
-        ps.setInt(1,User.getCurrentUser().getUserId());
+        ps.setInt(1, User.getCurrentUser().getUserId());
         //System.out.println(User.getCurrentUser().getUserId());
         ResultSet rs = ps.executeQuery();
         System.out.println("User_id  order_id  product_id  product_name    quantity    price    total_price   order_date");
-        while(rs.next())
-        {
-            System.out.println(rs.getInt(1)+"   \t   "+rs.getInt(2)+"   \t   "+rs.getInt(3)+"   \t   "+rs.getString(4)+"   \t   "+rs.getInt(5)+"   \t   "+rs.getInt(6)+"   \t   "+rs.getInt(7)+"   \t   "+rs.getDate(8));
+        while (rs.next()) {
+            System.out.println(rs.getInt(1) + "   \t   " + rs.getInt(2) + "   \t   " + rs.getInt(3) + "   \t   " + rs.getString(4) + "   \t   " + rs.getInt(5) + "   \t   " + rs.getInt(6) + "   \t   " + rs.getInt(7) + "   \t   " + rs.getDate(8));
 
         }
 //        System.out.println("1.Proceed To Pay\n2.Back\n\nEnter your choice : ");
@@ -1980,13 +1847,11 @@ public class CustomerManagement extends User {
 
     }
 
-    public static void start() throws Exception
-    {
+    public static void start() throws Exception {
         Scanner sc = new Scanner(System.in);
         OrderStack stack = new OrderStack();
         OrderProcessor processor = new OrderProcessor();
-        while (true)
-        {
+        while (true) {
             System.out.println("\n----- 🛍️ Welcome to Shopping Cart - Inventory Management System -----");
             System.out.println("1. 🔍 Browse Product");
             System.out.println("2. 🗂️ Categories");
@@ -2002,10 +1867,8 @@ public class CustomerManagement extends User {
             int choice = sc.nextInt();
             sc.nextLine(); // Database.getCon()some newline
 
-            try
-            {
-                switch (choice)
-                {
+            try {
+                switch (choice) {
                     case 1:
                         browseProduct();
                         break;
@@ -2030,7 +1893,8 @@ public class CustomerManagement extends User {
                     case 7:
                         stack.display();
                         break;
-                    case 8:     Order removed = stack.pop();
+                    case 8:
+                        Order removed = stack.pop();
                         if (removed != null) {
                             System.out.println("Removed: " + removed);
                         }
@@ -2049,8 +1913,13 @@ public class CustomerManagement extends User {
             }
         }
     }
+
+    public String getrole() {
+        return "customer";
+    }
 }
- class Order {
+
+class Order {
     int user_id;
     int order_id;
     int product_id;
@@ -2059,32 +1928,33 @@ public class CustomerManagement extends User {
     double total_price;
     Date order_date;
 
-     public Order(String product_name, int user_id, int order_id, int product_id, int quantity, double total_price, Date order_date) {
-         this.product_name = product_name;
-         this.user_id = user_id;
-         this.order_id = order_id;
-         this.product_id = product_id;
-         this.quantity = quantity;
-         this.total_price = total_price;
-         this.order_date = order_date;
-     }
+    public Order(String product_name, int user_id, int order_id, int product_id, int quantity, double total_price, Date order_date) {
+        this.product_name = product_name;
+        this.user_id = user_id;
+        this.order_id = order_id;
+        this.product_id = product_id;
+        this.quantity = quantity;
+        this.total_price = total_price;
+        this.order_date = order_date;
+    }
 
-     @Override
-     public String toString() {
-         return "Order{" +
-                 "user_id=" + user_id +
-                 ", order_id=" + order_id +
-                 ", product_id=" + product_id +
-                 ", product_name='" + product_name + '\'' +
-                 ", quantity=" + quantity +
-                 ", total_price=" + total_price +
-                 ", order_date=" + order_date +
-                 '}';
-     }
- }
- class OrderStack {
+    @Override
+    public String toString() {
+        return "Order{" +
+                "user_id=" + user_id +
+                ", order_id=" + order_id +
+                ", product_id=" + product_id +
+                ", product_name='" + product_name + '\'' +
+                ", quantity=" + quantity +
+                ", total_price=" + total_price +
+                ", order_date=" + order_date +
+                '}';
+    }
+}
+
+class OrderStack {
     private final int MAX = 100;
-    private Order[] stack = new Order[MAX];
+    private final Order[] stack = new Order[MAX];
     private int top = -1;
 
     // Manual push logic
@@ -2153,7 +2023,7 @@ class OrderProcessor {
 //
 //                if (rowsAffected > 0) {
 //                    System.out.println("Order processed and deleted from DB.");
-                    stack.push(order);  // use manual push logic
+                stack.push(order);  // use manual push logic
 //                } else {
 //                    System.out.println("Failed to delete order.");
 //                }
