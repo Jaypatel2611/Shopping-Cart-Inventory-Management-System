@@ -1950,48 +1950,8 @@ public class CustomerManagement extends User {
             }
         }
     }
-
-    class OrderStack {
-        private final int MAX = 100;
-        private final Order[] stack = new Order[MAX];
-        private int top = -1;
-
-        // Manual push logic
-        public void push(Order order) {
-            if (top == MAX - 1) {
-                System.out.println("Stack Overflow! Cannot add more orders.");
-                return;
-            }
-            top++;
-            stack[top] = order;
-            System.out.println("Order pushed to stack: " + order);
-        }
-
-        // Manual pop logic (if needed)
-        public Order pop() {
-            if (top == -1) {
-                System.out.println("Stack Underflow! No orders to pop.");
-                return null;
-            }
-            Order removedOrder = stack[top];
-            top--;
-            return removedOrder;
-        }
-
-        // View stack contents
-        public void display() {
-            if (top == -1) {
-                System.out.println("Stack is empty.");
-                return;
-            }
-            System.out.println("----- Order History (Top to Bottom) -----");
-            for (int i = top; i >= 0; i--) {
-                System.out.println(stack[i]);
-                System.out.println();
-            }
-        }
-    }
 }
+
 
 
 
