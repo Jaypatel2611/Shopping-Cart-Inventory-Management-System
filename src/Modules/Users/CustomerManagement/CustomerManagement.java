@@ -1,5 +1,6 @@
 package Modules.Users.CustomerManagement;
 
+import Data_Structure.OrderDoublyLinkedList;
 import Database.Database;
 import Modules.Address.Address;
 import Modules.Auth.Auth;
@@ -1752,7 +1753,7 @@ public class CustomerManagement extends User {
         LocalDateTime now = LocalDateTime.now();
 
         // Format it as yyyyMMdd_HHMS (safe for filenames)
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy_MMdd_HHmmss");
         String timestamp = now.format(formatter);
         String fileName = "Bill_" + orderId + "_" + timestamp + ".txt";
         return Ticket_dir + fileName;
@@ -1849,8 +1850,9 @@ public class CustomerManagement extends User {
 
     public static void start() throws Exception {
         Scanner sc = new Scanner(System.in);
-        OrderStack stack = new OrderStack();
+        OrderDoublyLinkedList orderList = new OrderDoublyLinkedList();
         OrderProcessor processor = new OrderProcessor();
+
         while (true) {
             System.out.println("\n----- 🛍️ Welcome to Shopping Cart - Inventory Management System -----");
             System.out.println("1. 🔍 Browse Product");
@@ -1888,19 +1890,23 @@ public class CustomerManagement extends User {
                     case 6:
                         System.out.print("Enter Order ID: ");
                         int id = sc.nextInt();
-                        processor.processOrder(id, Database.getCon(), stack);
+                        processor.processOrder(id, Database.getCon(), orderList); // <-- pass DLL
                         break;
+
                     case 7:
-                        stack.display();
+                        orderList.display();
                         break;
+
                     case 8:
-                        Order removed = stack.pop();
-                        if (removed != null) {
-                            System.out.println("Removed: " + removed);
-                        }
+                        orderList.cancelLastOrder();
+                        System.out.println("✅ Last Order Canceled Successfully");
                         break;
-                    // From image_a4bbbb.png
-                    case 9:
+
+                    case 9: // add new menu option
+                        orderList.reverseDisplay();
+                        break;
+
+                    case 10:
                         System.out.println("👋 Thank you for visiting! Goodbye.");
                         Auth.logincount++;
                         Auth.sessionOrderId = null; // Reset the session ID on logout
@@ -1916,39 +1922,6 @@ public class CustomerManagement extends User {
 
     public String getrole() {
         return "customer";
-    }
-}
-
-class Order {
-    int user_id;
-    int order_id;
-    int product_id;
-    String product_name;
-    int quantity;
-    double total_price;
-    Date order_date;
-
-    public Order(String product_name, int user_id, int order_id, int product_id, int quantity, double total_price, Date order_date) {
-        this.product_name = product_name;
-        this.user_id = user_id;
-        this.order_id = order_id;
-        this.product_id = product_id;
-        this.quantity = quantity;
-        this.total_price = total_price;
-        this.order_date = order_date;
-    }
-
-    @Override
-    public String toString() {
-        return "Order{" +
-                "user_id=" + user_id +
-                ", order_id=" + order_id +
-                ", product_id=" + product_id +
-                ", product_name='" + product_name + '\'' +
-                ", quantity=" + quantity +
-                ", total_price=" + total_price +
-                ", order_date=" + order_date +
-                '}';
     }
 }
 
@@ -1996,9 +1969,8 @@ class OrderStack {
 
 class OrderProcessor {
 
-    public void processOrder(int orderId, Connection con, OrderStack stack) {
+    public void processOrder(int orderId, Connection con, OrderDoublyLinkedList list) {
         try {
-            // 1. Fetch order
             String selectQuery = "SELECT * FROM orders WHERE order_id = ?";
             PreparedStatement selectPs = con.prepareStatement(selectQuery);
             selectPs.setInt(1, orderId);
@@ -2012,23 +1984,13 @@ class OrderProcessor {
                 double totalPrice = rs.getDouble("total_price");
                 Date orderDate = rs.getDate("order_date");
 
-                // 2. Create order object
                 Order order = new Order(productName, userId, orderId, productId, quantity, totalPrice, orderDate);
 
-                // 3. Delete from DB
-//                String deleteQuery = "DELETE FROM orders WHERE order_id = ?";
-//                PreparedStatement deletePs = con.prepareStatement(deleteQuery);
-//                deletePs.setInt(1, orderId);
-//                int rowsAffected = deletePs.executeUpdate();
-//
-//                if (rowsAffected > 0) {
-//                    System.out.println("Order processed and deleted from DB.");
-                stack.push(order);  // use manual push logic
-//                } else {
-//                    System.out.println("Failed to delete order.");
-//                }
+                // Push into DLL
+                list.add(order);
+
             } else {
-                System.out.println("Order ID not found.");
+                System.out.println("⚠️ Order ID not found.");
             }
 
         } catch (Exception e) {
@@ -2036,6 +1998,7 @@ class OrderProcessor {
         }
     }
 }
+
 
 
 

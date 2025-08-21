@@ -1,11 +1,9 @@
 import Database.Database;
 import Modules.Auth.Auth;
 import Modules.Users.AdminManagement.AdminManagement;
-import Modules.Users.CustomerManagement.CustomerManagement;
 import Modules.Users.User;
 
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.Scanner;
 
 public class Main {
@@ -16,7 +14,7 @@ public class Main {
         Scanner sc = new Scanner(System.in);
         Auth auth = new Auth();
         int choice;
-        do{
+        do {
             System.out.println("\n🔐 --------- Authentication Menu ---------");
             System.out.println("1. 📝 Sign Up");
             System.out.println("2. 🔓 Login");
@@ -43,7 +41,7 @@ public class Main {
                                     throw new RuntimeException(e);
                                 }
                             } else {
-                               // CustomerManagement.start(User.getUserById(userId));
+                                // CustomerManagement.start(User.getUserById(userId));
                             }
                         } else {
                             System.out.println("❌ Login failed. Invalid credentials.");
@@ -68,6 +66,6 @@ public class Main {
                 System.out.println("❌ Database error: " + e.getMessage());
             }
         }
-        while (choice!=3);
+        while (choice != 3);
     }
 }
