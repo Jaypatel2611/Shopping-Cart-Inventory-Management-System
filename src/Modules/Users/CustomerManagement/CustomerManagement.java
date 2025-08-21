@@ -5,6 +5,8 @@ import Database.Database;
 import Modules.Address.Address;
 import Modules.Auth.Auth;
 import Modules.Users.User;
+import Modules.utils.SmartShoppingSystem;
+
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -20,7 +22,7 @@ import java.util.Scanner;
 public class CustomerManagement extends User {
 
 
-    static final String Ticket_dir = "D:\\";
+    static final String Ticket_dir = "D:\\bills\\";
     static User user;
     static Scanner sc = new Scanner(System.in);
 
@@ -53,22 +55,31 @@ public class CustomerManagement extends User {
     }
 
     public static void addAddress() throws Exception {
-        System.out.println("Enter Address In formatted way ");
-        System.out.println("Enter Address Line  : ");
-        String addressLine = sc.nextLine();
-        System.out.println("Enter Area : ");
-        String area = sc.nextLine();
-        System.out.println("Enter City : ");
-        String city = sc.nextLine();
-        System.out.println("Enter State : ");
-        String state = sc.nextLine();
-        System.out.println("Enter Pin code : ");
-        int pinCode = sc.nextInt();
+        System.out.println("\n📍 Please enter your address details:");
 
-        Address add = new Address(User.getCurrentUser().getFirstName(), addressLine, area, city, state, pinCode, user);
+        System.out.print("Enter Address Line: ");
+        String addressLine = sc.nextLine();
+        sc.nextLine();
+
+        System.out.print("Enter Area: ");
+        String area = sc.nextLine();
+
+        System.out.print("Enter City: ");
+        String city = sc.nextLine();
+
+        System.out.print("Enter State: ");
+        String state = sc.nextLine();
+
+        System.out.print("Enter Pin Code: ");
+        int pinCode = sc.nextInt();
+        sc.nextLine(); // consume newline after nextInt()
+
+
+        Address address = new Address(User.getCurrentUser().getFirstName(),addressLine,area,city,state,pinCode,user);
     }
 
-    private static void payment(int p_id, int quantity) throws Exception {
+
+            private static void payment(int p_id, int quantity) throws Exception {
         System.out.println("1.Cash On Delivery\n2.Pay Online\n\nSelect Mode of Payment : ");
         int payMode = sc.nextInt();
         sc.nextLine(); // clear the newline character after nextInt()
@@ -1564,8 +1575,7 @@ public class CustomerManagement extends User {
 
             System.out.println("\n🧾 Grand Total: ₹" + total);
             System.out.println("1. Place Order");
-            System.out.println("2. CheckOut");
-            System.out.println("3. Back");
+            System.out.println("2. Back");
             System.out.print("Enter Choice : ");
 
             int choice = sc.nextInt();
@@ -1615,8 +1625,32 @@ public class CustomerManagement extends User {
                                 p.setTimestamp(6, new java.sql.Timestamp(System.currentTimeMillis()));
                                 p.setInt(7, User.getCurrentUser().getUserId());
                                 p.executeUpdate();
+                                try {
+                                    // update in-memory user stats immediately (optional)
+                                    User.getCurrentUser().getStats().addPurchase(new java.sql.Timestamp(System.currentTimeMillis()));
+                                } catch (Exception ignored) {}
+
                                 orders = new ArrayList<>();
                                 System.out.println(orders);
+                                int currentDay = 0;
+                                String select = "select order_date from orders where user_id = ? order by order_id desc limit 1";
+                                PreparedStatement ps10 = Database.getCon().prepareStatement(select);
+                                ps10.setInt(1,User.getCurrentUser().getUserId());
+                                ResultSet rsOrder1 = ps10.executeQuery();
+                                if (rsOrder1.next()) {
+                                    Date orderDate = rsOrder1.getDate(1); // works for TIMESTAMP
+                                     currentDay = (int) (orderDate.getTime() / (1000 * 60 * 60 * 24));
+                                }
+
+
+                                // int currentDay = (int) (System.currentTimeMillis() / (1000*60*60*24)); // day counter
+//                                SmartShoppingSystem.recordPurchase(User.getCurrentUser().getUserId(), rs.getInt("product_id"), currentDay);
+//
+//                                // === Show prediction to user ===
+//                                String suggestion = SmartShoppingSystem.predict(User.getCurrentUser().getUserId(), rs.getInt("product_id"), currentDay);
+//                                if (!suggestion.isEmpty()) {
+//                                    System.out.println(suggestion);
+//                                }
 
                                 String delete = "delete from cart where product_id = ?";
                                 PreparedStatement ps6 = Database.getCon().prepareStatement(delete);
@@ -1669,10 +1703,10 @@ public class CustomerManagement extends User {
 
                                                 // FileWriter writer = new FileWriter(orderPath);
                                                 writer.write("Orders for " + name + ":\n");
-                                                writer.write("--------------------------------------------------\n");
+                                                writer.write("--------------------------------------------------------------------------------\n");
                                                 writer.write(String.format("%-10s %-12s %-20s %-8s %-12s %-15s\n",
                                                         "OrderID", "ProductID", "ProductName", "Qty", "TotalPrice", "Date"));
-                                                writer.write("--------------------------------------------------\n");
+                                                writer.write("---------------------------------------------------------------------------------\n");
 
                                                 for (Order order : orders) {
                                                     writer.write(String.format("%-10d %-12d %-20s %-8d %-12.2f %-15s\n",
@@ -1717,18 +1751,12 @@ public class CustomerManagement extends User {
                             }
                         }
                     }
-
-                    // Thread.sleep(5000);
-                    break;
-
-
-                case 2:
                     System.out.println("✅ Proceeding to checkout...");
                     checkOut();
                     // Thread.sleep(5000);
                     break;
 
-                case 3:
+                case 2:
                     System.out.println("🔙 Returning to previous menu...");
                     // Thread.sleep(5000);
                     break;
@@ -1761,7 +1789,7 @@ public class CustomerManagement extends User {
 
     private static void checkOut() throws Exception {
         User user = User.getCurrentUser();
-        int currentUserId = 1;
+        //int currentUserId = 1;
         // User user = loggedInUser.get(currentUserId);
         //loggedInUser.put(currentUserId,user);
         String fetchAddress = "SELECT * from address where user_id = ? ";
@@ -1770,6 +1798,10 @@ public class CustomerManagement extends User {
             ResultSet rs = fetchCartItems.executeQuery();
             boolean flag = true;
             boolean found = true;
+
+            if(!rs.next()) {
+                addAddress();
+            }
 
             while (rs.next()) {
                 String name = rs.getString("name");
@@ -1809,44 +1841,54 @@ public class CustomerManagement extends User {
         String ans = sc.next().toLowerCase();
         if (ans.equals("yes")) {
             viewOrders();
-        } else {
-            //System.out.println("Revisit details");
-            //checkOut();
-
         }
-
-
     }
 
     public static void viewOrders() throws Exception {
-        String fetchOrders = "Select * from orders where user_id = ? ";
+        String fetchOrders = "SELECT * FROM orders WHERE user_id = ? ORDER BY order_date DESC";
         PreparedStatement ps = Database.getCon().prepareStatement(fetchOrders);
         ps.setInt(1, User.getCurrentUser().getUserId());
-        //System.out.println(User.getCurrentUser().getUserId());
         ResultSet rs = ps.executeQuery();
-        System.out.println("User_id  order_id  product_id  product_name    quantity    price    total_price   order_date");
-        while (rs.next()) {
-            System.out.println(rs.getInt(1) + "   \t   " + rs.getInt(2) + "   \t   " + rs.getInt(3) + "   \t   " + rs.getString(4) + "   \t   " + rs.getInt(5) + "   \t   " + rs.getInt(6) + "   \t   " + rs.getInt(7) + "   \t   " + rs.getDate(8));
 
+        if (!rs.isBeforeFirst()) { // no orders found
+            System.out.println("⚠️ No orders found for this user.");
+            return;
         }
-//        System.out.println("1.Proceed To Pay\n2.Back\n\nEnter your choice : ");
-//        int choice = sc.nextInt();
-//
-//        switch (choice) {
-//            case 1:
-//                payment();
-//                Thread.sleep(5000);
-//                break;
-//            case 2:
-//                System.out.println("↩️ Returning to previous menu...");
-//                // Possibly call main menu or cart view method again
-//                break;
-//            default:
-//                System.out.println("❌ Invalid choice! Please enter 1 or 2.");
-//        }
 
+        System.out.println("\n📦 Order History:");
+        System.out.printf("%-8s %-10s %-12s %-20s %-10s %-10s %-15s %-12s%n",
+                "UserID", "OrderID", "ProductID", "Product Name", "Quantity", "Price", "Total Price", "Order Date");
+        System.out.println("------------------------------------------------------------------------------------------------------");
+
+        while (rs.next()) {
+            System.out.printf("%-8d %-10d %-12d %-20s %-10d %-10.2f %-15.2f %-12s%n",
+                    rs.getInt("user_id"),
+                    rs.getInt("order_id"),
+                    rs.getInt("product_id"),
+                    rs.getString("product_name"),
+                    rs.getInt("quantity"),
+                    rs.getDouble("price"),
+                    rs.getDouble("total_price"),
+                    rs.getDate("order_date").toString());
+        }
+        // ---- Smart Shopping: Predict next expected purchase date ----
+        try {
+            SmartShoppingSystem.Stats stats = SmartShoppingSystem.buildStatsFromDb(Database.getCon(), User.getCurrentUser().getUserId());
+            int avg = stats.getAvgInterval();
+            if (avg == -1) {
+                System.out.println("\n🧠 Smart Suggestion: Not enough data yet to predict your next purchase.");
+            } else {
+                java.time.LocalDate next = stats.predictNextLocalDate();
+                System.out.println("\n🧠 Smart Suggestion: Based on your average interval of " + avg + " day(s),");
+                System.out.println("   your next expected purchase date is ≈ " + next + ".");
+            }
+        } catch (Exception e) {
+            System.out.println("⚠ SmartShopping prediction unavailable: " + e.getMessage());
+        }
 
     }
+
+
 
     public static void start() throws Exception {
         Scanner sc = new Scanner(System.in);
@@ -1951,7 +1993,6 @@ public class CustomerManagement extends User {
         }
     }
 }
-
 
 
 
