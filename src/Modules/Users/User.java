@@ -88,4 +88,12 @@ public class User {
     public void setMobileNo(String newmobileno) {
         this.mobileNo = newmobileno;
     }
+    public String getrole()
+    {
+        return "user";
+    }
+    public String toString()
+    {
+        return  getRole() + " : " + firstName;
+    }
 }
