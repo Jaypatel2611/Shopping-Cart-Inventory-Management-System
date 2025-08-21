@@ -1,13 +1,23 @@
 package Modules.Users.AdminManagement;
 
 import Database.Database;
+import Modules.Users.User;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.Scanner;
 
-public class AdminManagement {
+public class AdminManagement extends User {
     static Scanner sc = new Scanner(System.in);
+
+    public AdminManagement(int user_id, String firstName, String lastName, String userName, String password, String email, String mobileNo, String role) {
+        super(user_id, firstName, lastName, userName, password, email, mobileNo, role);
+    }
+
+    @Override
+    public String getrole() {
+        return "admin";
+    }
 
     public static void addProduct() throws Exception {
         //sc.nextLine(); // flush
@@ -133,10 +143,7 @@ public class AdminManagement {
                 System.out.println("⚠️ No product found with that ID.");
         }
     }
-    public static void viweBills()
-    {
 
-    }
 
     public static void main(String[] args) throws Exception {
         Scanner sc = new Scanner(System.in);
