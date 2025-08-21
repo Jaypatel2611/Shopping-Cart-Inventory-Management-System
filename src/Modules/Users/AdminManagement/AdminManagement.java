@@ -109,16 +109,18 @@ public class AdminManagement extends User {
         try (PreparedStatement ps = Database.getCon().prepareStatement(select);
              ResultSet rs = ps.executeQuery()) {
 
-            if (rs == null) {
+            if (!rs.isBeforeFirst()) { // checks if ResultSet has no rows
                 System.out.println("⚠️ No product found.");
                 return;
             }
 
             System.out.println("\n📋 Product List:");
-            System.out.println("ID\t    Name\t\t  Description\t\t Price\t Stock");
+            System.out.printf("%-5s %-20s %-30s %-10s %-10s%n",
+                    "ID", "Name", "Description", "Price", "Stock");
+            System.out.println("--------------------------------------------------------------------------");
 
             while (rs.next()) {
-                System.out.printf("%d\t%s\t\t%s\t\t%.2f\t%d\n",
+                System.out.printf("%-5d %-20s %-30s %-10.2f %-10d%n",
                         rs.getInt("product_id"),
                         rs.getString("product_name"),
                         rs.getString("description"),
@@ -127,6 +129,7 @@ public class AdminManagement extends User {
             }
         }
     }
+
 
     public static void deleteProduct() throws Exception {
         System.out.print("❗ Enter Product ID to Delete: ");
