@@ -1,215 +1,267 @@
 package Modules.Auth;
-
 import Database.Database;
 import Modules.Address.Address;
 import Modules.Users.AdminManagement.AdminManagement;
 import Modules.Users.CustomerManagement.CustomerManagement;
 import Modules.Users.User;
+import java.sql.*;
+import java.util.*;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Scanner;
+public class Auth extends User
+{
+    static public int logincount;
+    public static String sessionOrderId = null; // This will store the filename for the session
 
-
-
-//import static Modules.Users.CustomerManagement.CustomerManagement.user;
-
-public class Auth {
+    static String orderId;
     Scanner sc = new Scanner(System.in);
 
-    private boolean isValidEmail(String email) {
+    public Auth(int user_id, String firstName, String lastName, String userName, String password, String email, String mobileNo, String role) {
+        super(user_id, firstName, lastName, userName, password, email, mobileNo, role);
+    }
+
+
+    private boolean isValidEmail(String email)
+    {
         // Accepts emails like test@example.com
-        String emailPattern = "^[\\w.-]+@[a-zA-Z\\d.-]+\\.[a-zA-Z]{2,}$";
+        String emailPattern = "^[a-z][a-z0-9]{4,}@gmail\\.com$";
         return email.matches(emailPattern);
     }
 
-    private boolean isValidMobileNo(String mobileNo) {
+    private boolean isValidUsername(String username) throws Exception
+    {
+        boolean b = false;
+        String fetchingUsername = "SELECT username FROM users";
+        Statement st = Database.getCon().createStatement();
+        ResultSet rs = st.executeQuery(fetchingUsername);
+        while (rs.next())
+        {
+            if(rs.getString(1).equals(username))
+            {
+                b = false;
+                System.out.println("❌ This username already exists! Please try another one.");
+                break;
+            }
+            else
+            {
+                b = true;
+            }
+        }
+        return username.matches("^[a-zA-Z].{5,}$") && b;
+    }
+
+    private boolean isValidMobileNo(String mobileNo)
+    {
         // Accepts exactly 10 digit mobile numbers
         return mobileNo.matches("\\d{10}");
     }
 
-    private boolean isValidPassword(String password) {
+    private boolean isValidPassword(String password)
+    {
         String pattern = "^(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*()_+\\-={}:;\"'<>?,./]).{8,}$";
         return password.matches(pattern);
     }
 
     // Method to check if first name is only alphabets
-    public static boolean isValidFirstName(String name) {
-        return name.matches("[a-zA-Z]+");
-        }
-    public static boolean isValidLastName(String name) {
+    public static boolean isValidName(String name)
+    {
         return name.matches("[a-zA-Z]+");
     }
 
 
-    public void signUp() throws Exception {
+    public void signUp() throws Exception
+    {
         Connection con = Database.getCon();
 
+        //taking first name
         String firstName;
-        do {
+        do
+        {
             System.out.print("Enter First Name : ");
             firstName = sc.next().toLowerCase();
-            if (isValidFirstName(firstName)) {
-                System.out.println("Valid first name ✅");
+            if (isValidName(firstName))
+            {
+               // System.out.println("Valid first name ✅");
                 break;
-            } else {
+            }
+            else
+            {
                 System.out.println("Invalid first name ❌ (only letters allowed)");
             }
+        }while (true);
 
-        }
-        while (true);
-        System.out.print("Enter Last Name : ");
+        //taking last name
         String lastName;
-        // String lastName ;
-        do {
+        do
+        {
             System.out.print("Enter last Name : ");
             lastName = sc.next().toLowerCase();
-            if (isValidLastName(lastName)) {
-                System.out.println("Valid Last name ✅");
+            if (isValidName(lastName))
+            {
+               // System.out.println("Valid Last name ✅");
                 break;
-            } else {
+            }
+            else
+            {
                 System.out.println("Invalid last name ❌ (only letters allowed)");
             }
 
-        }
-        while (true);
+        }while (true);
+
+        //taking email
         String email;
         sc.nextLine();
-        do {
-            System.out.print("Enter your email: ");
+        do
+        {
+            System.out.print("Enter your email : ");
             email = sc.nextLine().trim();
-
-            if (isValidEmail(email)) {
-                System.out.println("✅ Valid email!");
+            if (isValidEmail(email))
+            {
+               // System.out.println("✅ Valid email!");
                 break;
-            } else {
+            }
+            else
+            {
                 System.out.println("❌ Invalid email! Please enter a valid email address.");
             }
-        } while (true);
+        }while (true);
 
+        //taking mobile number
         String mobileNo;
-        do {
+        do
+        {
             System.out.print("Enter your mobile number: ");
             mobileNo = sc.nextLine().trim();
 
-            if (isValidMobileNo(mobileNo)) {
-                System.out.println("✅ Valid mobile No!");
+            if (isValidMobileNo(mobileNo))
+            {
+               // System.out.println("✅ Valid mobile No!");
                 break;
-            } else {
+            }
+            else
+            {
                 System.out.println("❌ Invalid mobile number! It must contain exactly 10 digits.");
             }
-        } while (true);
-        System.out.print("Enter userName : ");
-        String userName = sc.next();
+        }while (true);
+
+        //taking username
+        String userName;
+        do
+        {
+            System.out.print("Enter userName : ");
+            userName = sc.next();
+            if (isValidUsername(userName))
+            {
+               // System.out.println("✅ Valid username!");
+                break;
+            }
+            else
+            {
+                System.out.println("❌ Invalid username! Please enter again");
+            }
+        }while (true);
+
+        //taking password
         String password;
-        while (true) {
+        while (true)
+        {
             System.out.print("Enter Password : ");
             password = sc.next();
-
-            if (isValidPassword(password)) {
+            if (isValidPassword(password))
+            {
                 break;
-            } else {
+            }
+            else
+            {
                 System.out.println("❌ Password must be at least 8 characters long, contain:");
                 System.out.println("   → At least one uppercase letter");
                 System.out.println("   → At least one digit");
                 System.out.println("   → At least one special character (!@#$%^&* etc.)");
             }
-//            System.out.println("Enter Modules.Address In formatted way ");
-//            System.out.println("Enter Modules.Address Line 1 : ");
-//            String addressLine1 = sc.nextLine();
-//            sc.nextLine();
-//            System.out.println("Enter Modules.Address Line 2 : ");
-//            String addressLine2 = sc.nextLine();
-//            System.out.println("Enter Area : ");
-//            String area = sc.nextLine();
-//            System.out.println("Enter City : ");
-//            String city = sc.nextLine();
-//            System.out.println("Enter State : ");
-//            String state = sc.nextLine();
-//            System.out.println("Enter Pin code : ");
-//            int pinCode = sc.nextInt();
-//
-//            User user = User.getCurrentUser();
-//            Address add = new Address(user.getFirstName(), addressLine1, addressLine2, area, city, state, pinCode, user);
-
-
         }
-//        System.out.println("select your role ");
-//        String role = sc.next().toLowerCase();
-//        if (role.equalsIgnoreCase("admin")) {
-//           // System.out.println("Enter Admin Password");
-//            //String Adminpassword ;
-//            String Adminpassword = "Admin@123";
-//            while (true) {
-//                System.out.print("Enter Admin Password : ");
-//                password = sc.next();
-//
-//                if (isValidPassword(password) && password.equalsIgnoreCase("Admin@123")) {
-//                    AdminManagement am = new AdminManagement();
-//                    break;
-//                } else {
-//                    System.out.println("❌ Password must be at least 8 characters long, contain:");
-//                    System.out.println("   → At least one uppercase letter");
-//                    System.out.println("   → At least one digit");
-//                    System.out.println("   → At least one special character (!@#$%^&* etc.)");
-//                }
-//            }
 
-            String insertUser = "INSERT INTO users(first_name,last_name,username,mobile_no,email,password,role) VALUES(?,?,?,?,?,?,?)";
-            try (PreparedStatement insertStmt = con.prepareStatement(insertUser)) {
-
-                insertStmt.setString(1, firstName);
-                insertStmt.setString(2, lastName);
-                insertStmt.setString(3, userName);
-                insertStmt.setString(4, mobileNo);
-                insertStmt.setString(5, email);
-                insertStmt.setString(6, password);
-                insertStmt.setString(7, "user");
-                int rows = insertStmt.executeUpdate();
-                if (rows > 0) {
-                    ResultSet keys = insertStmt.getGeneratedKeys();
-                    if (keys.next()) {
-                        int newUser = keys.getInt(1);
-                    }
-                    PreparedStatement ps = Database.getCon().prepareStatement("select * from users where user_id = ?");
-                    ResultSet rss = ps.executeQuery();
-                    if (rss.next()) {
-                        User.addLoggedInUser(rss);
-                    }
+        //after validating every entry, now inserting into users table
+        String insertUser = "INSERT INTO users(first_name,last_name,username,mobile_no,email,password,role) VALUES(?,?,?,?,?,?,?)";
+        try (PreparedStatement insertStmt = con.prepareStatement(insertUser))
+        {
+            insertStmt.setString(1, firstName);
+            insertStmt.setString(2, lastName);
+            insertStmt.setString(3, userName);
+            insertStmt.setString(4, mobileNo);
+            insertStmt.setString(5, email);
+            insertStmt.setString(6, password);
+            insertStmt.setString(7, "customer");
+            int rows = insertStmt.executeUpdate();
+            if (rows > 0)
+            {
+                ResultSet keys = insertStmt.getGeneratedKeys();
+                int newUser = 0;
+                if (keys.next())
+                {
+                    newUser = keys.getInt(1);
                 }
-
-            } catch (Exception e) {
-                //throw new RuntimeException(e);
+                PreparedStatement ps = Database.getCon().prepareStatement("select * from users where user_id = ?");
+                ps.setInt(1,newUser);
+                ResultSet rss = ps.executeQuery();
+                if (rss.next())
+                {
+                    User.addLoggedInUser(rss);
+                }
             }
-            System.out.println("✅ Signed Up Successfully");
         }
+        catch (Exception e)
+        {
+                //throw new RuntimeException(e);
+        }
+        System.out.println("✅ Signed Up Successfully");
+    }
+    public static String  setOrderId(String userName, String password,int logincount)
+    {
+        int random = 0;
 
+        random = (int) (Math.random() * 1000);
 
+        return orderId = userName + password+random;
+    }
 
-    public int userLogin() throws Exception {
-    Scanner sc = new Scanner(System.in);
+    //login page
+    public int userLogin() throws Exception
+    {
+        logincount++;
+        Scanner sc = new Scanner(System.in);
         Connection con = Database.getCon();
         System.out.print("Enter userName : ");
         String userName = sc.next();
         System.out.print("Enter Password : ");
         String password = sc.next();
+        Auth.sessionOrderId = setOrderId(userName, password, logincount);
+
+
+
+       // setOrderId(userName,password,logincount);
 
         String fetchUserDetails = "SELECT * FROM users WHERE username = ? AND password = ?";
-        try (PreparedStatement insertStmt = con.prepareStatement(fetchUserDetails)) {
+        try (PreparedStatement insertStmt = con.prepareStatement(fetchUserDetails))
+        {
             insertStmt.setString(1, userName);
             insertStmt.setString(2, password);
 
             ResultSet rs = insertStmt.executeQuery();
-            while (rs.next()) {
+            while (rs.next())
+            {
                 String fetchedPassword = rs.getString("password");
-                if (password.equals(fetchedPassword)) {
+                if (password.equals(fetchedPassword))
+                {
                     System.out.println("✅ Logged In Successfully");
                     User.addLoggedInUser(rs);
-                    CustomerManagement.start();
-                    return rs.getInt("user_id");
-                } else {
+                    //checking role (user or admin)
+                    if(User.getCurrentUser().getRole().equalsIgnoreCase("customer"))
+                    {
+                        CustomerManagement.start();
+                    }
+                    return User.getCurrentUser().getUserId();
+                }
+                else
+                {
                     System.out.println("❌ Invalid Credentials");
                 }
             }
