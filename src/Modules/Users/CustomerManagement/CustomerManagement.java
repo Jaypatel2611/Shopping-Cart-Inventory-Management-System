@@ -1862,8 +1862,8 @@ public class CustomerManagement extends User {
             System.out.println("5. 📦 My Orders");
             System.out.println("6. ⚡ Process Order");
             System.out.println("7. 👁️ View Orders (Oldest → Latest)");
-            System.out.println("8. ↩️ Undo Last Order");
-            System.out.println("9. 🔄 View Orders (Latest → Oldest)");
+            System.out.println("8. 🔄 View Orders (Latest → Oldest)");
+            System.out.println("9. 🗑️ Cancel Last Order");
             System.out.println("10. 🚪 Logout / Exit");
             System.out.print("\nChoose an option (1-10): ");
 
@@ -1896,10 +1896,10 @@ public class CustomerManagement extends User {
                         orderList.display();
                         break;
                     case 8:
-                        orderList.cancelLastOrder(); // ✅ renamed to match DLL method
+                        orderList.reverseDisplay();
                         break;
                     case 9:
-                        orderList.reverseDisplay();
+                        orderList.cancelLastOrder();
                         break;
                     case 10:
                         System.out.println("👋 Thank you for visiting! Goodbye.");
@@ -1951,6 +1951,7 @@ public class CustomerManagement extends User {
         }
     }
 }
+
 
 
 
