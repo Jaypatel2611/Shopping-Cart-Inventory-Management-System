@@ -15,14 +15,21 @@ import java.util.Date;
 import static Modules.Users.User.loggedInUser;
 
 
-public class CustomerManagement {
+public class CustomerManagement extends User {
 
 
     static User user;
     static Scanner sc = new Scanner(System.in);
 
+    public CustomerManagement(int user_id, String firstName, String lastName, String userName, String password, String email, String mobileNo, String role) {
+        super(user_id, firstName, lastName, userName, password, email, mobileNo, role);
+    }
+    public String getrole() {
+        return "customer";
+    }
 
-private static boolean isValidUPIID(String upi_id) {
+
+    private static boolean isValidUPIID(String upi_id) {
     // Accepts emails like test@example.com
     String UPIPattern = "^[\\w.-]+@[a-zA-Z\\d.-]+\\.[a-zA-Z]{2,}$";
     return upi_id.matches(upi_id);
@@ -118,7 +125,7 @@ private static boolean isValidUPIID(String upi_id) {
             case 2:
                 System.out.println("💳 You have selected Pay Online.");
                 System.out.println("🔐 Redirecting to payment gateway...");
-                Thread.sleep(2000);
+               // Thread.sleep(2000);
                 String UPI_ID ;
                 sc.nextLine();
                 do {
@@ -134,7 +141,7 @@ private static boolean isValidUPIID(String upi_id) {
                 } while (true);
                 System.out.println("Enter your PIN");
                 int PIN = sc.nextInt();
-                Thread.sleep(10000);
+              //  Thread.sleep(10000);
                 String fetchCart1 = "SELECT p.product_id, p.product_name, o.quantity, o.price " +
                         "FROM orders o JOIN product p ON o.product_id = p.product_id where user_id = ?" ;
 
@@ -172,7 +179,7 @@ private static boolean isValidUPIID(String upi_id) {
                     else {
                         System.out.println("🚚 Delivery charges = ₹" + 0+"(Free)");
                     }
-                    Thread.sleep(1000);
+                   // Thread.sleep(1000);
                     System.out.println("📦 Your order is placed successfully and will shipped soon!");
                 }
 
@@ -896,7 +903,7 @@ private static boolean isValidUPIID(String upi_id) {
                                         System.out.println("not founded");
                                     }
                                 }break;
-                            case 2:String select1 = "select * from product where category_id = ? and subcategory = ? ";
+                            case 2:String select1 = "select * from product where category_id = ? and subcategory_id = ? ";
                                 PreparedStatement ps1 = con.prepareStatement(select1,ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_READ_ONLY);
                                 ps1.setInt(1,4);
                                 ps1.setInt(2,402);
@@ -1592,7 +1599,6 @@ private static boolean isValidUPIID(String upi_id) {
                 System.out.println("Invalid Choice");
         }
     }
-    static ArrayList<Order> orders = new ArrayList<>();
 
 
     public static void viewCart() throws Exception
@@ -1641,47 +1647,34 @@ private static boolean isValidUPIID(String upi_id) {
                     System.out.print("Enter new quantity : ");
                     int newQty = sc.nextInt();
                     String stockCheckQuery = "SELECT stock FROM product WHERE product_id = ?";
-                    try (PreparedStatement stockStmt = Database.getCon().prepareStatement(stockCheckQuery))
-                    {
+                    try (PreparedStatement stockStmt = Database.getCon().prepareStatement(stockCheckQuery)) {
                         stockStmt.setInt(1, updatePid);
-                        ResultSet rs1 = stockStmt.executeQuery();
-
-                        if (rs1.next())
-                        {
-                            int availableStock = rs.getInt(1);
-                            if (availableStock < 0)
-                            {
-                                System.out.println("❌ Out of Stock! Only " + availableStock + " left.");
-                            }
-                            else if (newQty > availableStock)
-                            {
-                                System.out.println("❌ Cannot update. Requested quantity exceeds available stock (" + availableStock + ").");
-                            }
-                            else
-                            {
-                                String updateCart = "UPDATE cart SET quantity = ? WHERE product_id = ?";
-                                try (PreparedStatement updateStmt = Database.getCon().prepareStatement(updateCart))
-                                {
-                                    updateStmt.setInt(1, newQty);
-                                    updateStmt.setInt(2, updatePid);
-                                    int rowsUpdated = updateStmt.executeUpdate();
-                                    if (rowsUpdated > 0)
-                                    {
-                                        System.out.println("✅ Cart updated successfully!");
-                                    }
-                                    else
-                                    {
-                                        System.out.println("❌ Product not found in cart.");
+                        try (ResultSet rs1 = stockStmt.executeQuery()) {
+                            if (rs1.next()) {
+                                int availableStock = rs1.getInt("stock"); // safer than index
+                                if (availableStock <= 0) {
+                                    System.out.println("❌ Out of Stock! Only " + availableStock + " left.");
+                                } else if (newQty > availableStock) {
+                                    System.out.println("❌ Cannot update. Requested quantity exceeds available stock (" + availableStock + ").");
+                                } else {
+                                    String updateCart = "UPDATE cart SET quantity = ? WHERE product_id = ?";
+                                    try (PreparedStatement updateStmt = Database.getCon().prepareStatement(updateCart)) {
+                                        updateStmt.setInt(1, newQty);
+                                        updateStmt.setInt(2, updatePid);
+                                        updateStmt.executeUpdate();
+                                        System.out.println("✅ Cart updated successfully.");
                                     }
                                 }
+                            } else {
+                                System.out.println("⚠ Product not found in database.");
                             }
                         }
-                        else
-                        {
-                            System.out.println("❌ Product not found in product table.");
-                        }
                     }
+
                 }
+
+
+
 
             }
             if (!hasItems)
@@ -1729,6 +1722,7 @@ private static boolean isValidUPIID(String upi_id) {
 
                     // Move cursor to start
                     rs.beforeFirst();
+                    ArrayList<Order> orders;
 
                     while (rs.next()) {
                         if (rs.getInt("product_id") == pid) {
@@ -1747,6 +1741,8 @@ private static boolean isValidUPIID(String upi_id) {
                                 p.setTimestamp(6, new java.sql.Timestamp(System.currentTimeMillis()));
                                 p.setInt(7, User.getCurrentUser().getUserId());
                                 p.executeUpdate();
+                                orders = new ArrayList<>();
+                                System.out.println(orders);
 
                                 String delete = "delete from cart where product_id = ?";
                                 PreparedStatement ps6 = Database.getCon().prepareStatement(delete);
@@ -1793,10 +1789,10 @@ private static boolean isValidUPIID(String upi_id) {
                                                 PreparedStatement ps4 = Database.getCon().prepareStatement(orders1);
                                                 ps4.setInt(1, User.getCurrentUser().getUserId());
                                                 ResultSet rsOrder = ps4.executeQuery();
-                                                String orderPath = saveTicketFile(Auth.setOrderId(User.getCurrentUser().getUserName(), User.getCurrentUser().getPassword(),Auth.logincount));
-                                                System.out.println(orderPath);
+                                                String orderPath = saveTicketFile(Auth.sessionOrderId);
+                                                FileWriter writer = new FileWriter(orderPath,true);                                                System.out.println(orderPath);
 
-                                                FileWriter writer = new FileWriter(orderPath);
+                                               // FileWriter writer = new FileWriter(orderPath);
                                                 writer.write("Orders for " + name + ":\n");
                                                 writer.write("--------------------------------------------------\n");
                                                 writer.write(String.format("%-10s %-12s %-20s %-8s %-12s %-15s\n",
@@ -1817,6 +1813,7 @@ private static boolean isValidUPIID(String upi_id) {
                                                 writer.flush();
                                                 writer.close();
 
+
                                                 String join = "select users.user_id,orders.order_date from users inner join orders on users.user_id = orders.user_id";
                                                 PreparedStatement ps1 = Database.getCon().prepareStatement(join);
                                                 ResultSet rs1 = ps1.executeQuery();
@@ -1834,6 +1831,8 @@ private static boolean isValidUPIID(String upi_id) {
 
                                                 }
                                             }
+                                            orders.removeAll(orders);
+                                            System.out.println(orders);
                                             break;
                                         } else {
                                             System.out.println("Invalid choice");
@@ -1852,17 +1851,17 @@ private static boolean isValidUPIID(String upi_id) {
                 case 2:
                     System.out.println("✅ Proceeding to checkout...");
                     checkOut();
-                    Thread.sleep(5000);
+                   // Thread.sleep(5000);
                     break;
 
                 case 3:
                     System.out.println("🔙 Returning to previous menu...");
-                    Thread.sleep(5000);
+                   // Thread.sleep(5000);
                     break;
 
                 default:
                     System.out.println("❌ Invalid choice! Please select 1, 2, or 3.");
-                    Thread.sleep(5000);
+                  //  Thread.sleep(5000);
             }
         }
     }
@@ -1878,7 +1877,8 @@ private static boolean isValidUPIID(String upi_id) {
     }
     static String saveTicketFile(String orderId)
     {
-        String fileName = "Bill_" + orderId + "_"  + ".txt";
+        int i = 1;
+        String fileName = "Bill_" + orderId + "_"  + ++i + ".txt";
         String fullpath = Ticket_dir + fileName;
         return fullpath;
     }
@@ -2035,11 +2035,12 @@ private static boolean isValidUPIID(String upi_id) {
                             System.out.println("Removed: " + removed);
                         }
                         break;
+                    // From image_a4bbbb.png
                     case 9:
                         System.out.println("👋 Thank you for visiting! Goodbye.");
-
+                        Auth.logincount++;
+                        Auth.sessionOrderId = null; // Reset the session ID on logout
                         return;
-//
                     default:
                         System.out.println("❌ Invalid choice. Please enter between 1 and 7.");
                 }
