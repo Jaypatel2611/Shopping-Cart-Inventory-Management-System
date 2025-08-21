@@ -83,21 +83,40 @@ public class OrderDoublyLinkedList {
         }
     }
 
-    // Undo last order (remove from tail)
-    public Order cancelLastOrder() {
+    // ✅ Cancel last order (remove from DLL + delete from DB)
+    public void cancelLastOrder(Connection con) {
         if (tail == null) {
-            System.out.println("❌ No order to Cancel.");
-            return null;
+            System.out.println("❌ No order to undo.");
+            return;
         }
-        Order removed = tail.order;
-        if (head == tail) { // only one node
-            head = tail = null;
-        } else {
-            tail = tail.prev;
-            tail.next = null;
+
+        Order lastOrder = tail.order;
+        try {
+            // 1. Delete from DB
+            String deleteQuery = "DELETE FROM orders WHERE order_id = ?";
+            PreparedStatement ps = con.prepareStatement(deleteQuery);
+            ps.setInt(1, lastOrder.order_id);
+
+            int rows = ps.executeUpdate();
+            if (rows > 0) {
+                System.out.println("🗑️ Deleted from DB: " + lastOrder);
+            } else {
+                System.out.println("⚠️ Order not found in DB: " + lastOrder.order_id);
+            }
+
+            // 2. Remove from DLL
+            if (head == tail) { // only one node
+                head = tail = null;
+            } else {
+                tail = tail.prev;
+                tail.next = null;
+            }
+
+            System.out.println("↩️ Undo (removed from list): " + lastOrder);
+
+        } catch (SQLException e) {
+            System.out.println("❌ Error while deleting last order: " + e.getMessage());
         }
-        System.out.println("↩️ Cancel last order: " + removed);
-        return removed;
     }
 }
 
