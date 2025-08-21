@@ -1849,147 +1849,146 @@ public class CustomerManagement extends User {
     }
 
     public static void start() throws Exception {
-    Scanner sc = new Scanner(System.in);
-    OrderDoublyLinkedList orderList = new OrderDoublyLinkedList();
-    OrderProcessor processor = new OrderProcessor();
+        Scanner sc = new Scanner(System.in);
+        OrderDoublyLinkedList orderList = new OrderDoublyLinkedList();
+        OrderProcessor processor = new OrderProcessor();
 
-    while (true) {
-        System.out.println("\n----- 🛍️ Welcome to Shopping Cart - Inventory Management System -----");
-        System.out.println("1. 🔍 Browse Product");
-        System.out.println("2. 🗂️ Categories");
-        System.out.println("3. 🛒 View Cart");
-        System.out.println("4. 👤 Profile Management");
-        System.out.println("5. 📦 My Orders");
-        System.out.println("6. ⚡ Process Order");
-        System.out.println("7. 👁️ View Orders (Oldest → Latest)");
-        System.out.println("8. ↩️ Undo Last Order");
-        System.out.println("9. 🔄 View Orders (Latest → Oldest)");
-        System.out.println("10. 🚪 Logout / Exit");
-        System.out.print("\nChoose an option (1-10): ");
+        while (true) {
+            System.out.println("\n----- 🛍️ Welcome to Shopping Cart - Inventory Management System -----");
+            System.out.println("1. 🔍 Browse Product");
+            System.out.println("2. 🗂️ Categories");
+            System.out.println("3. 🛒 View Cart");
+            System.out.println("4. 👤 Profile Management");
+            System.out.println("5. 📦 My Orders");
+            System.out.println("6. ⚡ Process Order");
+            System.out.println("7. 👁️ View Orders (Oldest → Latest)");
+            System.out.println("8. ↩️ Undo Last Order");
+            System.out.println("9. 🔄 View Orders (Latest → Oldest)");
+            System.out.println("10. 🚪 Logout / Exit");
+            System.out.print("\nChoose an option (1-10): ");
 
-        int choice = sc.nextInt();
-        sc.nextLine(); // consume newline
+            int choice = sc.nextInt();
+            sc.nextLine(); // consume newline
 
-        try {
-            switch (choice) {
-                case 1:
-                    browseProduct();
-                    break;
-                case 2:
-                    viewCategories();
-                    break;
-                case 3:
-                    viewCart();
-                    break;
-                case 4:
-                    profileManagement(); // already working
-                    break;
-                case 5:
-                    viewOrders();
-                    break;
-                case 6:
-                    System.out.print("Enter Order ID: ");
-                    int id = sc.nextInt();
-                    processor.processOrder(id, Database.getCon(), orderList);
-                    break;
-                case 7:
-                    orderList.display();
-                    break;
-                case 8:
-                    orderList.undo(); // ✅ renamed to match DLL method
-                    break;
-                case 9:
-                    orderList.reverseDisplay();
-                    break;
-                case 10:
-                    System.out.println("👋 Thank you for visiting! Goodbye.");
-                    Auth.logincount++;
-                    Auth.sessionOrderId = null; // reset session
-                    return;
-                default:
-                    System.out.println("❌ Invalid choice. Please enter between 1 and 10.");
+            try {
+                switch (choice) {
+                    case 1:
+                        browseProduct();
+                        break;
+                    case 2:
+                        viewCategories();
+                        break;
+                    case 3:
+                        viewCart();
+                        break;
+                    case 4:
+                        profileManagement(); // already working
+                        break;
+                    case 5:
+                        viewOrders();
+                        break;
+                    case 6:
+                        System.out.print("Enter Order ID: ");
+                        int id = sc.nextInt();
+                        processor.processOrder(id, Database.getCon(), orderList);
+                        break;
+                    case 7:
+                        orderList.display();
+                        break;
+                    case 8:
+                        orderList.cancelLastOrder(); // ✅ renamed to match DLL method
+                        break;
+                    case 9:
+                        orderList.reverseDisplay();
+                        break;
+                    case 10:
+                        System.out.println("👋 Thank you for visiting! Goodbye.");
+                        Auth.logincount++;
+                        Auth.sessionOrderId = null; // reset session
+                        return;
+                    default:
+                        System.out.println("❌ Invalid choice. Please enter between 1 and 10.");
+                }
+            } catch (SQLException e) {
+                System.out.println("❌ Error: " + e.getMessage());
             }
-        } catch (SQLException e) {
-            System.out.println("❌ Error: " + e.getMessage());
         }
     }
-}
 
-public String getrole() {
-    return "customer";
-}
-
-
-class OrderStack {
-    private final int MAX = 100;
-    private final Order[] stack = new Order[MAX];
-    private int top = -1;
-
-    // Manual push logic
-    public void push(Order order) {
-        if (top == MAX - 1) {
-            System.out.println("Stack Overflow! Cannot add more orders.");
-            return;
-        }
-        top++;
-        stack[top] = order;
-        System.out.println("Order pushed to stack: " + order);
+    public String getrole() {
+        return "customer";
     }
 
-    // Manual pop logic (if needed)
-    public Order pop() {
-        if (top == -1) {
-            System.out.println("Stack Underflow! No orders to pop.");
-            return null;
-        }
-        Order removedOrder = stack[top];
-        top--;
-        return removedOrder;
-    }
+    static class OrderProcessor {
 
-    // View stack contents
-    public void display() {
-        if (top == -1) {
-            System.out.println("Stack is empty.");
-            return;
-        }
-        System.out.println("----- Order History (Top to Bottom) -----");
-        for (int i = top; i >= 0; i--) {
-            System.out.println(stack[i]);
-            System.out.println();
-        }
-    }
-}
+        public void processOrder(int orderId, Connection con, OrderDoublyLinkedList list) {
+            try {
+                String selectQuery = "SELECT * FROM orders WHERE order_id = ?";
+                PreparedStatement selectPs = con.prepareStatement(selectQuery);
+                selectPs.setInt(1, orderId);
+                ResultSet rs = selectPs.executeQuery();
 
+                if (rs.next()) {
+                    String productName = rs.getString("product_name");
+                    int userId = rs.getInt("user_id");
+                    int productId = rs.getInt("product_id");
+                    int quantity = rs.getInt("quantity");
+                    double totalPrice = rs.getDouble("total_price");
+                    Date orderDate = rs.getDate("order_date");
 
-class OrderProcessor {
+                    Order order = new Order(productName, userId, orderId, productId, quantity, totalPrice, orderDate);
 
-    public void processOrder(int orderId, Connection con, OrderDoublyLinkedList list) {
-        try {
-            String selectQuery = "SELECT * FROM orders WHERE order_id = ?";
-            PreparedStatement selectPs = con.prepareStatement(selectQuery);
-            selectPs.setInt(1, orderId);
-            ResultSet rs = selectPs.executeQuery();
+                    // Push into DLL
+                    list.add(order);
 
-            if (rs.next()) {
-                String productName = rs.getString("product_name");
-                int userId = rs.getInt("user_id");
-                int productId = rs.getInt("product_id");
-                int quantity = rs.getInt("quantity");
-                double totalPrice = rs.getDouble("total_price");
-                Date orderDate = rs.getDate("order_date");
+                } else {
+                    System.out.println("⚠️ Order ID not found.");
+                }
 
-                Order order = new Order(productName, userId, orderId, productId, quantity, totalPrice, orderDate);
-
-                // Push into DLL
-                list.add(order);
-
-            } else {
-                System.out.println("⚠️ Order ID not found.");
+            } catch (Exception e) {
+                e.printStackTrace();
             }
+        }
+    }
 
-        } catch (Exception e) {
-            e.printStackTrace();
+    class OrderStack {
+        private final int MAX = 100;
+        private final Order[] stack = new Order[MAX];
+        private int top = -1;
+
+        // Manual push logic
+        public void push(Order order) {
+            if (top == MAX - 1) {
+                System.out.println("Stack Overflow! Cannot add more orders.");
+                return;
+            }
+            top++;
+            stack[top] = order;
+            System.out.println("Order pushed to stack: " + order);
+        }
+
+        // Manual pop logic (if needed)
+        public Order pop() {
+            if (top == -1) {
+                System.out.println("Stack Underflow! No orders to pop.");
+                return null;
+            }
+            Order removedOrder = stack[top];
+            top--;
+            return removedOrder;
+        }
+
+        // View stack contents
+        public void display() {
+            if (top == -1) {
+                System.out.println("Stack is empty.");
+                return;
+            }
+            System.out.println("----- Order History (Top to Bottom) -----");
+            for (int i = top; i >= 0; i--) {
+                System.out.println(stack[i]);
+                System.out.println();
+            }
         }
     }
 }
