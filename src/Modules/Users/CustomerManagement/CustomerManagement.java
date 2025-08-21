@@ -1849,81 +1849,76 @@ public class CustomerManagement extends User {
     }
 
     public static void start() throws Exception {
-        Scanner sc = new Scanner(System.in);
-        OrderDoublyLinkedList orderList = new OrderDoublyLinkedList();
-        OrderProcessor processor = new OrderProcessor();
+    Scanner sc = new Scanner(System.in);
+    OrderDoublyLinkedList orderList = new OrderDoublyLinkedList();
+    OrderProcessor processor = new OrderProcessor();
 
-        while (true) {
-            System.out.println("\n----- 🛍️ Welcome to Shopping Cart - Inventory Management System -----");
-            System.out.println("1. 🔍 Browse Product");
-            System.out.println("2. 🗂️ Categories");
-            System.out.println("3. 🛒 View Cart");
-            System.out.println("4. 👤 Profile Management");
-            System.out.println("5. 📦 My Orders");
-            System.out.println("6.    Process Order");
-            System.out.println("7.    View Order ");
-            System.out.println("8.    Undo Last Order");
-            System.out.println("9. 🚪 Logout / Exit");
-            System.out.print("\nChoose an option (1-9): ");
+    while (true) {
+        System.out.println("\n----- 🛍️ Welcome to Shopping Cart - Inventory Management System -----");
+        System.out.println("1. 🔍 Browse Product");
+        System.out.println("2. 🗂️ Categories");
+        System.out.println("3. 🛒 View Cart");
+        System.out.println("4. 👤 Profile Management");
+        System.out.println("5. 📦 My Orders");
+        System.out.println("6. ⚡ Process Order");
+        System.out.println("7. 👁️ View Orders (Oldest → Latest)");
+        System.out.println("8. ↩️ Undo Last Order");
+        System.out.println("9. 🔄 View Orders (Latest → Oldest)");
+        System.out.println("10. 🚪 Logout / Exit");
+        System.out.print("\nChoose an option (1-10): ");
 
-            int choice = sc.nextInt();
-            sc.nextLine(); // Database.getCon()some newline
+        int choice = sc.nextInt();
+        sc.nextLine(); // consume newline
 
-            try {
-                switch (choice) {
-                    case 1:
-                        browseProduct();
-                        break;
-                    case 2:
-                        viewCategories();
-                        break;
-                    case 3:
-                        viewCart();
-                        break;
-                    case 4:
-                        // Fully Working
-                        profileManagement();
-                        break;
-                    case 5:
-                        viewOrders();
-                        break;
-                    case 6:
-                        System.out.print("Enter Order ID: ");
-                        int id = sc.nextInt();
-                        processor.processOrder(id, Database.getCon(), orderList); // <-- pass DLL
-                        break;
-
-                    case 7:
-                        orderList.display();
-                        break;
-
-                    case 8:
-                        orderList.cancelLastOrder();
-                        System.out.println("✅ Last Order Canceled Successfully");
-                        break;
-
-                    case 9: // add new menu option
-                        orderList.reverseDisplay();
-                        break;
-
-                    case 10:
-                        System.out.println("👋 Thank you for visiting! Goodbye.");
-                        Auth.logincount++;
-                        Auth.sessionOrderId = null; // Reset the session ID on logout
-                        return;
-                    default:
-                        System.out.println("❌ Invalid choice. Please enter between 1 and 7.");
-                }
-            } catch (SQLException e) {
-                System.out.println("❌ Error: " + e.getMessage());
+        try {
+            switch (choice) {
+                case 1:
+                    browseProduct();
+                    break;
+                case 2:
+                    viewCategories();
+                    break;
+                case 3:
+                    viewCart();
+                    break;
+                case 4:
+                    profileManagement(); // already working
+                    break;
+                case 5:
+                    viewOrders();
+                    break;
+                case 6:
+                    System.out.print("Enter Order ID: ");
+                    int id = sc.nextInt();
+                    processor.processOrder(id, Database.getCon(), orderList);
+                    break;
+                case 7:
+                    orderList.display();
+                    break;
+                case 8:
+                    orderList.undo(); // ✅ renamed to match DLL method
+                    break;
+                case 9:
+                    orderList.reverseDisplay();
+                    break;
+                case 10:
+                    System.out.println("👋 Thank you for visiting! Goodbye.");
+                    Auth.logincount++;
+                    Auth.sessionOrderId = null; // reset session
+                    return;
+                default:
+                    System.out.println("❌ Invalid choice. Please enter between 1 and 10.");
             }
+        } catch (SQLException e) {
+            System.out.println("❌ Error: " + e.getMessage());
         }
     }
-
-    public String getrole() {
-        return "customer";
-    }
 }
+
+public String getrole() {
+    return "customer";
+}
+
 
 class OrderStack {
     private final int MAX = 100;
@@ -1998,6 +1993,7 @@ class OrderProcessor {
         }
     }
 }
+
 
 
 
