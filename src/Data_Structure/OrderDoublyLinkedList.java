@@ -86,7 +86,7 @@ public class OrderDoublyLinkedList {
     // Undo last order (remove from tail)
     public Order cancelLastOrder() {
         if (tail == null) {
-            System.out.println("❌ No order to undo.");
+            System.out.println("❌ No order to Cancel.");
             return null;
         }
         Order removed = tail.order;
@@ -96,7 +96,7 @@ public class OrderDoublyLinkedList {
             tail = tail.prev;
             tail.next = null;
         }
-        System.out.println("↩️ Undo last order: " + removed);
+        System.out.println("↩️ Cancel last order: " + removed);
         return removed;
     }
 }
