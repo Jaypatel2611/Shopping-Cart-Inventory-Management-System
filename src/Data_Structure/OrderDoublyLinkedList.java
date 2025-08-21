@@ -1,6 +1,10 @@
 package Data_Structure;
 
+import Database.Database;
 import Modules.Users.CustomerManagement.Order;
+
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 public class OrderDoublyLinkedList {
     private OrderNode head;
@@ -83,8 +87,8 @@ public class OrderDoublyLinkedList {
         }
     }
 
-    // ✅ Cancel last order (remove from DLL + delete from DB)
-    public void cancelLastOrder(Connection con) {
+    // ✅ Undo last order (remove from DLL + delete from DB)
+    public void cancelLastOrder() throws Exception {
         if (tail == null) {
             System.out.println("❌ No order to undo.");
             return;
@@ -94,14 +98,14 @@ public class OrderDoublyLinkedList {
         try {
             // 1. Delete from DB
             String deleteQuery = "DELETE FROM orders WHERE order_id = ?";
-            PreparedStatement ps = con.prepareStatement(deleteQuery);
-            ps.setInt(1, lastOrder.order_id);
+            PreparedStatement ps = Database.getCon().prepareStatement(deleteQuery);
+            ps.setInt(1, lastOrder.getOrder_id());
 
             int rows = ps.executeUpdate();
             if (rows > 0) {
                 System.out.println("🗑️ Deleted from DB: " + lastOrder);
             } else {
-                System.out.println("⚠️ Order not found in DB: " + lastOrder.order_id);
+                System.out.println("⚠️ Order not found in DB: " + lastOrder.getOrder_id());
             }
 
             // 2. Remove from DLL
