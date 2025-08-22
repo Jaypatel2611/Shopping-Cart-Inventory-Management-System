@@ -8,12 +8,13 @@ public class Database {
     static Connection con = null;
     static public Connection getCon() throws Exception
     {
-        String dburl = "jdbc:mysql://localhost:3306/shopping_system";
-        String dbuser = "root";
-        String dbpass = "";
-        String driver = "com.mysql.cj.jdbc.Driver";
-        Class.forName(driver);
-        con = DriverManager.getConnection(dburl,dbuser,dbpass);
+
+        Class.forName("com.mysql.cj.jdbc.Driver");
+        con = DriverManager.getConnection(
+                "jdbc:mysql://localhost:3307/Shopping_Cart?allowPublicKeyRetrieval=true&useSSL=false",
+                "root",
+                "pass"
+        );
         return con;
     }
 

@@ -118,7 +118,7 @@ public class Auth {
 
         //after validating every entry, now inserting into users table
         String insertUser = "INSERT INTO users(first_name,last_name,username,mobile_no,email,password,role) VALUES(?,?,?,?,?,?,?)";
-        try (PreparedStatement insertStmt = con.prepareStatement(insertUser)) {
+        try (PreparedStatement insertStmt = con.prepareStatement(insertUser, Statement.RETURN_GENERATED_KEYS)) {
             insertStmt.setString(1, firstName);
             insertStmt.setString(2, lastName);
             insertStmt.setString(3, userName);
@@ -126,14 +126,16 @@ public class Auth {
             insertStmt.setString(5, email);
             insertStmt.setString(6, password);
             insertStmt.setString(7, "customer");
+
             int rows = insertStmt.executeUpdate();
             if (rows > 0) {
                 ResultSet keys = insertStmt.getGeneratedKeys();
                 int newUser = 0;
                 if (keys.next()) {
-                    newUser = keys.getInt(1);
+                    newUser = keys.getInt(1);  // ✅ auto-generated user_id
                 }
-                PreparedStatement ps = Database.getCon().prepareStatement("select * from users where user_id = ?");
+
+                PreparedStatement ps = Database.getCon().prepareStatement("SELECT * FROM users WHERE user_id = ?");
                 ps.setInt(1, newUser);
                 ResultSet rss = ps.executeQuery();
                 if (rss.next()) {
@@ -141,8 +143,9 @@ public class Auth {
                 }
             }
         } catch (Exception e) {
-            //throw new RuntimeException(e);
+            throw new RuntimeException(e);
         }
+
         System.out.println("✅ Signed Up Successfully");
     }
 
@@ -193,8 +196,9 @@ public class Auth {
 
         // setOrderId(userName,password,logincount);
 
-        String fetchUserDetails = "SELECT * FROM users WHERE username = ? AND password = ?";
-        try (PreparedStatement insertStmt = con.prepareStatement(fetchUserDetails)) {
+        String loginQuery = "SELECT user_id, first_name, last_name, email, mobile_no, username, password, role " +
+                "FROM users WHERE username = ? AND password = ?";
+        try (PreparedStatement insertStmt = con.prepareStatement(loginQuery)) {
             insertStmt.setString(1, userName);
             insertStmt.setString(2, password);
 
@@ -202,13 +206,19 @@ public class Auth {
             while (rs.next()) {
                 String fetchedPassword = rs.getString("password");
                 if (password.equals(fetchedPassword)) {
-                    System.out.println("✅ Logged In Successfully");
-                    User.addLoggedInUser(rs);
-                    //checking role (user or admin)
-                    if (User.getCurrentUser().getRole().equalsIgnoreCase("customer")) {
-                        CustomerManagement.start();
-                    }
-                    return User.getCurrentUser().getUserId();
+                    int userId = rs.getInt("user_id");
+                    String firstName = rs.getString("first_name");
+                    String lastName = rs.getString("last_name");
+                    String email = rs.getString("email");
+                    String mobile = rs.getString("mobile_no");
+                    String username = rs.getString("username");
+                    String role = rs.getString("role");
+
+                    // Create User object and set it as current
+                    User loggedInUser = new User(userId, firstName, lastName, email, mobile, username, fetchedPassword, role);
+                    User.setCurrentUser(loggedInUser);
+                    return userId;
+
                 } else {
                     System.out.println("❌ Invalid Credentials");
                 }

@@ -5,17 +5,19 @@ import Database.Database;
 import Modules.Address.Address;
 import Modules.Auth.Auth;
 import Modules.Users.User;
-import Modules.Utils.SmartShoppingSystem;
+import Modules.Utils.*;
 
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Scanner;
 
 
@@ -33,7 +35,7 @@ public class CustomerManagement extends User {
     private static boolean isValidUPIID(String upi_id) {
         // Accepts emails like test@example.com
         String UPIPattern = "^[\\w.-]+@[a-zA-Z\\d.-]+\\.[a-zA-Z]{2,}$";
-        return upi_id.matches(upi_id);
+        return upi_id.matches(UPIPattern);
     }
 
     public static boolean isValidFirstName(String name) {
@@ -47,6 +49,10 @@ public class CustomerManagement extends User {
     private static boolean isValidMobileNo(String mobileNo) {
         // Accepts exactly 10 digit mobile numbers
         return mobileNo.matches("\\d{10}");
+    }
+
+    private static boolean isValidBillId(String bill_id) {
+        return bill_id != null && bill_id.matches("\\d+");
     }
 
     private static boolean isValidPassword(String password) {
@@ -79,68 +85,60 @@ public class CustomerManagement extends User {
     }
 
 
-            private static void payment(int p_id, int quantity) throws Exception {
+    private static void payment(int p_id, int quantity) throws Exception {
         System.out.println("1.Cash On Delivery\n2.Pay Online\n\nSelect Mode of Payment : ");
         int payMode = sc.nextInt();
-        sc.nextLine(); // clear the newline character after nextInt()
+        sc.nextLine(); // clear newline
 
         switch (payMode) {
             case 1:
                 System.out.println("✅ You have selected Cash On Delivery.");
                 String fetchCart = "SELECT product_id, product_name, price " +
-                        "FROM product where product_id = ?";
+                        "FROM product WHERE product_id = ?";
 
                 try (PreparedStatement fetchCartItems = Database.getCon().prepareStatement(
                         fetchCart, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
                     fetchCartItems.setInt(1, p_id);
                     ResultSet rs = fetchCartItems.executeQuery();
-                    //System.out.println(rs.next());
 
-
-                    boolean hasItems = false;
                     double total = 0;
 
-                    // First loop to display cart items
+                    // Loop through product(s)
                     while (rs.next()) {
-
-                        hasItems = true;
-                        //int quantity = rs.getInt("quantity");
                         double price = rs.getDouble("price");
+
+                        // ✅ use method parameter 'quantity' here (not DB column)
                         double itemTotal = price * quantity;
                         total += itemTotal;
-
                     }
+
                     System.out.println("💰 Bill Amount (Before GST) = ₹" + total);
 
-// Apply 18% GST
+                    // Apply 18% GST
                     double gst = total * 0.18;
                     total += gst;
-
                     System.out.println("📊 GST (18%) = ₹" + gst);
                     System.out.println("🧾 Total After GST = ₹" + total);
 
-// Apply delivery charges if total < ₹400
+                    // Apply delivery charges if total < ₹400
                     if (total < 400) {
-                        int charges = 40 + (int) (Math.random() * 11); // Random between 40 and 50
+                        int charges = 40 + (int) (Math.random() * 11);
                         System.out.println("🚚 Delivery charges = ₹" + charges);
                         total += charges;
                     } else {
-                        System.out.println("🚚 Delivery charges = ₹" + 0 + "(Free)");
+                        System.out.println("🚚 Delivery charges = ₹0 (Free)");
                     }
-
 
                     System.out.println("🧾 Final Total Bill = ₹" + total);
                     System.out.println("📦 Your order is placed successfully and will be shipped soon!");
-
-                    break;
                 }
+                break;
 
             case 2:
                 System.out.println("💳 You have selected Pay Online.");
                 System.out.println("🔐 Redirecting to payment gateway...");
-                // Thread.sleep(2000);
+
                 String UPI_ID;
-                sc.nextLine();
                 do {
                     System.out.print("Enter your UPI ID: ");
                     UPI_ID = sc.nextLine().trim();
@@ -152,58 +150,56 @@ public class CustomerManagement extends User {
                         System.out.println("❌ Invalid UPI ID! Please enter a valid UPI ID.");
                     }
                 } while (true);
-                System.out.println("Enter your PIN");
+
+                System.out.print("Enter your PIN: ");
                 int PIN = sc.nextInt();
-                //  Thread.sleep(10000);
+
                 String fetchCart1 = "SELECT p.product_id, p.product_name, o.quantity, o.price " +
-                        "FROM orders o JOIN product p ON o.product_id = p.product_id where user_id = ?";
+                        "FROM orders o JOIN product p ON o.product_id = p.product_id WHERE user_id = ?";
 
                 try (PreparedStatement fetchCartItems = Database.getCon().prepareStatement(
                         fetchCart1, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
                     fetchCartItems.setInt(1, User.getCurrentUser().getUserId());
                     ResultSet rs = fetchCartItems.executeQuery();
-                    boolean hasItems = false;
+
                     double total = 0;
 
-                    // First loop to display cart items
+                    // Loop through order items
                     while (rs.next()) {
-                        hasItems = true;
-//                        int quantity = rs.getInt("quantity");
+                        int qty = rs.getInt("quantity");  // ✅ from DB
                         double price = rs.getDouble("price");
-                        double itemTotal = price * quantity;
+                        double itemTotal = price * qty;
                         total += itemTotal;
-
                     }
+
                     System.out.println("💰 Bill Amount (Before GST) = ₹" + total);
 
-// Apply 18% GST
+                    // Apply 18% GST
                     double gst = total * 0.18;
                     total += gst;
-
                     System.out.println("📊 GST (18%) = ₹" + gst);
                     System.out.println("🧾 Total After GST = ₹" + total);
 
-// Apply delivery charges if total < ₹400
+                    // Apply delivery charges if total < ₹400
                     if (total < 400) {
-                        int charges = 40 + (int) (Math.random() * 11); // Random between 40 and 50
+                        int charges = 40 + (int) (Math.random() * 11);
                         System.out.println("🚚 Delivery charges = ₹" + charges);
                         total += charges;
                     } else {
-                        System.out.println("🚚 Delivery charges = ₹" + 0 + "(Free)");
+                        System.out.println("🚚 Delivery charges = ₹0 (Free)");
                     }
-                    // Thread.sleep(1000);
-                    System.out.println("📦 Your order is placed successfully and will shipped soon!");
+
+                    System.out.println("🧾 Final Total Bill = ₹" + total);
+                    System.out.println("📦 Your order is placed successfully and will be shipped soon!");
                 }
-
-
                 break;
 
             default:
                 System.out.println("❌ Invalid payment mode selected. Please choose 1 or 2.");
-                // You may loop back or prompt again
                 break;
         }
     }
+
 
     private static void browseProduct() throws Exception {
         String showproduct = "select product_id,category_id,subcategory_id,product_name,description,price from product";
@@ -1502,7 +1498,7 @@ public class CustomerManagement extends User {
     public static void viewCart() throws Exception {
         User user = loggedInUser.get(User.getCurrentUser().getUserId());
         String fetchCart = "SELECT p.product_id, p.product_name, c.quantity, c.price " +
-                "FROM cart c JOIN product p ON c.product_id = p.product_id where user_id = ?";
+                "FROM cart c JOIN product p ON c.product_id = p.product_id WHERE user_id = ?";
 
         try (PreparedStatement fetchCartItems = Database.getCon().prepareStatement(
                 fetchCart, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
@@ -1513,8 +1509,6 @@ public class CustomerManagement extends User {
             boolean hasItems = false;
             double total = 0;
 
-
-            // First loop to display cart items
             while (rs.next()) {
                 hasItems = true;
                 int productId = rs.getInt("product_id");
@@ -1531,43 +1525,7 @@ public class CustomerManagement extends User {
                 System.out.println("Total          : ₹" + itemTotal);
                 System.out.println("-----------------------------------");
             }
-            if (hasItems) {
-                System.out.print("Do you want to update Cart details (yes/no) : ");
-                String ans = sc.next().toLowerCase();
-                if (ans.equals("yes")) {
-                    System.out.print("Enter Product ID to update quantity : ");
-                    int updatePid = sc.nextInt();
-                    System.out.print("Enter new quantity : ");
-                    int newQty = sc.nextInt();
-                    String stockCheckQuery = "SELECT stock FROM product WHERE product_id = ?";
-                    try (PreparedStatement stockStmt = Database.getCon().prepareStatement(stockCheckQuery)) {
-                        stockStmt.setInt(1, updatePid);
-                        try (ResultSet rs1 = stockStmt.executeQuery()) {
-                            if (rs1.next()) {
-                                int availableStock = rs1.getInt("stock"); // safer than index
-                                if (availableStock <= 0) {
-                                    System.out.println("❌ Out of Stock! Only " + availableStock + " left.");
-                                } else if (newQty > availableStock) {
-                                    System.out.println("❌ Cannot update. Requested quantity exceeds available stock (" + availableStock + ").");
-                                } else {
-                                    String updateCart = "UPDATE cart SET quantity = ? WHERE product_id = ?";
-                                    try (PreparedStatement updateStmt = Database.getCon().prepareStatement(updateCart)) {
-                                        updateStmt.setInt(1, newQty);
-                                        updateStmt.setInt(2, updatePid);
-                                        updateStmt.executeUpdate();
-                                        System.out.println("✅ Cart updated successfully.");
-                                    }
-                                }
-                            } else {
-                                System.out.println("⚠ Product not found in database.");
-                            }
-                        }
-                    }
 
-                }
-
-
-            }
             if (!hasItems) {
                 System.out.println("🛒 Your cart is empty.");
                 return;
@@ -1579,194 +1537,53 @@ public class CustomerManagement extends User {
             System.out.print("Enter Choice : ");
 
             int choice = sc.nextInt();
-
             switch (choice) {
                 case 1:
-
-                    System.out.print("Enter Product ID to be ordered: ");
-                    int pid = sc.nextInt();
-                    System.out.print("Enter Quantity to be ordered : ");
-                    int cquantity = sc.nextInt();
-                    String fetchQuantity = "select quantity from cart where product_id = ?";
-                    PreparedStatement ps = Database.getCon().prepareStatement(fetchQuantity);
-                    ps.setInt(1, pid);
-                    ResultSet crs = ps.executeQuery();
-//                    System.out.println();
-//                    boolean b = false;
-                    while (crs.next()) {
-//                        System.out.println();
-                        if (crs.getInt("quantity") >= cquantity) {
-                            payment(pid, cquantity);
-                        } else {
-                            System.out.println("Your cart item has not enough quantity!");
-                            viewCart();
-                        }
-                    }
-
-
-                    // Move cursor to start
-                    rs.beforeFirst();
-                    ArrayList<Order> orders;
-
+                    // ✅ Place order for all cart items
+                    rs.beforeFirst(); // reset cursor
                     while (rs.next()) {
-                        if (rs.getInt("product_id") == pid) {
-                            double tprice = rs.getDouble("price") * rs.getInt("quantity");
+                        int pid = rs.getInt("product_id");
+                        String pname = rs.getString("product_name");
+                        int qty = rs.getInt("quantity");
+                        double price = rs.getDouble("price");
+                        double tprice = price * qty;
 
-                            String placingOrder = "INSERT INTO orders " +
-                                    "(product_id, product_name, quantity, price, total_price, order_date,user_id) " +
-                                    "VALUES (?, ?, ?, ?, ?, ?, ?)";
+                        String placingOrder = "INSERT INTO orders " +
+                                "(product_id, product_name, quantity, price, total_price, order_date, user_id) " +
+                                "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
-                            try (PreparedStatement p = Database.getCon().prepareStatement(placingOrder, Statement.RETURN_GENERATED_KEYS)) {
-                                p.setInt(1, rs.getInt("product_id"));
-                                p.setString(2, rs.getString("product_name"));
-                                p.setInt(3, rs.getInt("quantity"));
-                                p.setDouble(4, rs.getDouble("price"));
-                                p.setDouble(5, tprice);
-                                p.setTimestamp(6, new java.sql.Timestamp(System.currentTimeMillis()));
-                                p.setInt(7, User.getCurrentUser().getUserId());
-                                p.executeUpdate();
-                                try {
-                                    // update in-memory user stats immediately (optional)
-                                    User.getCurrentUser().getStats().addPurchase(new java.sql.Timestamp(System.currentTimeMillis()));
-                                } catch (Exception ignored) {}
+                        try (PreparedStatement p = Database.getCon().prepareStatement(placingOrder)) {
+                            p.setInt(1, pid);
+                            p.setString(2, pname);
+                            p.setInt(3, qty);
+                            p.setDouble(4, price);
+                            p.setDouble(5, tprice);
+                            p.setTimestamp(6, new java.sql.Timestamp(System.currentTimeMillis()));
+                            p.setInt(7, User.getCurrentUser().getUserId());
+                            p.executeUpdate();
+                        }
 
-                                orders = new ArrayList<>();
-                                System.out.println(orders);
-                                int currentDay = 0;
-                                String select = "select order_date from orders where user_id = ? order by order_id desc limit 1";
-                                PreparedStatement ps10 = Database.getCon().prepareStatement(select);
-                                ps10.setInt(1,User.getCurrentUser().getUserId());
-                                ResultSet rsOrder1 = ps10.executeQuery();
-                                if (rsOrder1.next()) {
-                                    Date orderDate = rsOrder1.getDate(1); // works for TIMESTAMP
-                                     currentDay = (int) (orderDate.getTime() / (1000 * 60 * 60 * 24));
-                                }
-
-
-                                // int currentDay = (int) (System.currentTimeMillis() / (1000*60*60*24)); // day counter
-//                                SmartShoppingSystem.recordPurchase(User.getCurrentUser().getUserId(), rs.getInt("product_id"), currentDay);
-//
-//                                // === Show prediction to user ===
-//                                String suggestion = SmartShoppingSystem.predict(User.getCurrentUser().getUserId(), rs.getInt("product_id"), currentDay);
-//                                if (!suggestion.isEmpty()) {
-//                                    System.out.println(suggestion);
-//                                }
-
-                                String delete = "delete from cart where product_id = ?";
-                                PreparedStatement ps6 = Database.getCon().prepareStatement(delete);
-                                ps6.setInt(1, rs.getInt("product_id"));
-                                ps6.executeUpdate();
-                                OrderProcessor or = new OrderProcessor();
-                                ResultSet genKeys = p.getGeneratedKeys();
-                                if (genKeys.next()) {
-                                    int orderId = genKeys.getInt(1);
-
-                                    // ✅ Now fetch the order_date for this specific order
-                                    String orderFetch = "SELECT order_date FROM orders WHERE order_id = ?";
-                                    PreparedStatement pf = Database.getCon().prepareStatement(orderFetch);
-                                    pf.setInt(1, orderId);
-                                    ResultSet rsf = pf.executeQuery();
-
-                                    if (rsf.next()) {
-                                        orders.add(new Order(
-                                                rs.getString("product_name"),
-                                                User.getCurrentUser().getUserId(),
-                                                orderId,
-                                                rs.getInt("product_id"),
-                                                rs.getInt("quantity"),
-                                                tprice,
-                                                rsf.getDate("order_date")
-                                        ));
-
-                                        System.out.println("do you want to order more(yes/no)");
-                                        String ans1 = sc.next().toLowerCase();
-
-                                        if (ans1.equals("yes")) {
-                                            viewCart();
-                                        } else if (ans1.equals("no")) {
-                                            //FileWriter for bill generation
-                                            System.out.println("✅ Order placed successfully!");
-                                            String users = "select first_name,user_id from users where user_id = ?";
-                                            PreparedStatement ps3 = Database.getCon().prepareStatement(users);
-                                            ps3.setInt(1, User.getCurrentUser().getUserId());
-                                            ResultSet rs3 = ps3.executeQuery();
-
-                                            if (rs3.next()) {
-                                                String name = rs3.getString(1);
-                                                String orders1 = "select * from orders where user_id = ? ";
-                                                PreparedStatement ps4 = Database.getCon().prepareStatement(orders1);
-                                                ps4.setInt(1, User.getCurrentUser().getUserId());
-                                                ResultSet rsOrder = ps4.executeQuery();
-                                                String orderPath = saveTicketFile(Auth.sessionOrderId);
-                                                FileWriter writer = new FileWriter(orderPath, true);
-                                                System.out.println(orderPath);
-
-                                                // FileWriter writer = new FileWriter(orderPath);
-                                                writer.write("Orders for " + name + ":\n");
-                                                writer.write("--------------------------------------------------------------------------------\n");
-                                                writer.write(String.format("%-10s %-12s %-20s %-8s %-12s %-15s\n",
-                                                        "OrderID", "ProductID", "ProductName", "Qty", "TotalPrice", "Date"));
-                                                writer.write("---------------------------------------------------------------------------------\n");
-
-                                                for (Order order : orders) {
-                                                    writer.write(String.format("%-10d %-12d %-20s %-8d %-12.2f %-15s\n",
-                                                            order.order_id,
-                                                            order.product_id,
-                                                            order.product_name,
-                                                            order.quantity,
-                                                            order.total_price,
-                                                            order.order_date.toString()
-                                                    ));
-                                                }
-
-                                                writer.flush();
-                                                writer.close();
-
-
-                                                String join = "select users.user_id,orders.order_date from users inner join orders on users.user_id = orders.user_id";
-                                                PreparedStatement ps1 = Database.getCon().prepareStatement(join);
-                                                ResultSet rs1 = ps1.executeQuery();
-                                                while (rs1.next()) {
-                                                    String insertbill = "Insert into bills(customer_id,bill_date,bill) values(?,?,?)";
-                                                    PreparedStatement ps2 = Database.getCon().prepareStatement(insertbill);
-                                                    ps2.setInt(1, rs1.getInt(1));
-                                                    ps2.setDate(2, rs1.getDate(2));
-                                                    FileInputStream fis = new FileInputStream(orderPath);
-
-                                                    ps2.setBlob(3, fis);
-
-                                                    ps2.executeUpdate();
-                                                    fis.close();
-
-                                                }
-                                            }
-                                            orders.removeAll(orders);
-                                            System.out.println(orders);
-                                            break;
-                                        } else {
-                                            System.out.println("Invalid choice");
-                                        }
-                                    }
-                                }
-                            }
+                        // Remove from cart after ordering
+                        String delete = "DELETE FROM cart WHERE product_id = ?";
+                        try (PreparedStatement del = Database.getCon().prepareStatement(delete)) {
+                            del.setInt(1, pid);
+                            del.executeUpdate();
                         }
                     }
-                    System.out.println("✅ Proceeding to checkout...");
-                    checkOut();
-                    // Thread.sleep(5000);
+
+                    System.out.println("✅ Order placed successfully!");
                     break;
 
                 case 2:
                     System.out.println("🔙 Returning to previous menu...");
-                    // Thread.sleep(5000);
                     break;
 
                 default:
-                    System.out.println("❌ Invalid choice! Please select 1, 2, or 3.");
-                    //  Thread.sleep(5000);
+                    System.out.println("❌ Invalid choice! Please select 1 or 2.");
             }
         }
     }
+
 
     public static void ensureFolder() {
         // String pathName = "D:\\T4 Java\\Shopping-Cart-Inventory-Management-System";
@@ -1844,13 +1661,76 @@ public class CustomerManagement extends User {
         }
     }
 
+    public static void downloadInvoice() throws Exception {
+        String bill_id;
+
+        // 1. Fetch and display available bills with details
+        String fetchBills = "SELECT bill_id, bill_date, total_amount FROM bills WHERE user_id = ?";
+        PreparedStatement billSt = Database.getCon().prepareStatement(fetchBills);
+        billSt.setInt(1, User.getCurrentUser().getUserId()); // assuming you track logged-in customer
+        ResultSet billRs = billSt.executeQuery();
+
+        System.out.println("\n🧾 Your Available Bills:");
+        System.out.println("-------------------------------------------------------");
+        System.out.printf("%-10s %-15s %-10s\n", "Bill ID", "Date", "Amount(₹)");
+        System.out.println("-------------------------------------------------------");
+
+        boolean hasBills = false;
+        while (billRs.next()) {
+            int id = billRs.getInt("bill_id");
+            Date date = billRs.getDate("bill_date");
+            double amount = billRs.getDouble("total_amount");
+
+            System.out.printf("%-10d %-15s %-10.2f\n", id, date.toString(), amount);
+            hasBills = true;
+        }
+
+        if (!hasBills) {
+            System.out.println("⚠️ No bills found for your account.");
+            return;
+        }
+
+        // 2. Ask user for Bill ID
+        while (true) {
+            System.out.print("\nEnter Bill ID to download invoice: ");
+            bill_id = sc.next();
+
+            if (isValidBillId(bill_id)) {
+                String fetchInvoice = "SELECT bill FROM bills WHERE bill_id = ?";
+                PreparedStatement fetchSt = Database.getCon().prepareStatement(fetchInvoice);
+                fetchSt.setInt(1, Integer.parseInt(bill_id));
+                ResultSet rs = fetchSt.executeQuery();
+
+                if (rs.next()) {
+                    // ✅ Read BLOB as byte array
+                    byte[] invoiceBytes = rs.getBytes("bill");
+
+                    // 3. Save to file (assuming invoices stored as PDF/text)
+                    String fileName = "Invoice_" + bill_id + ".txt";
+                    File invoice = new File("D:\\"+fileName);
+                    try (FileOutputStream fos = new FileOutputStream(invoice)) {
+                        fos.write(invoiceBytes);
+                    }
+
+                    System.out.println("✅ Invoice downloaded successfully as " + fileName);
+                    break;
+                } else {
+                    System.out.println("⚠️ No Invoice Found for Bill ID: " + bill_id);
+                }
+            } else {
+                System.out.println("❌ Invalid Bill ID (must be numeric)");
+            }
+        }
+    }
+
+
     public static void viewOrders() throws Exception {
         String fetchOrders = "SELECT * FROM orders WHERE user_id = ? ORDER BY order_date DESC";
         PreparedStatement ps = Database.getCon().prepareStatement(fetchOrders);
         ps.setInt(1, User.getCurrentUser().getUserId());
         ResultSet rs = ps.executeQuery();
 
-        if (!rs.isBeforeFirst()) { // no orders found
+        if (!rs.isBeforeFirst()) {
             System.out.println("⚠️ No orders found for this user.");
             return;
         }
@@ -1871,23 +1751,24 @@ public class CustomerManagement extends User {
                     rs.getDouble("total_price"),
                     rs.getDate("order_date").toString());
         }
-        // ---- Smart Shopping: Predict next expected purchase date ----
-        try {
-            SmartShoppingSystem.Stats stats = SmartShoppingSystem.buildStatsFromDb(Database.getCon(), User.getCurrentUser().getUserId());
-            int avg = stats.getAvgInterval();
-            if (avg == -1) {
-                System.out.println("\n🧠 Smart Suggestion: Not enough data yet to predict your next purchase.");
-            } else {
-                java.time.LocalDate next = stats.predictNextLocalDate();
-                System.out.println("\n🧠 Smart Suggestion: Based on your average interval of " + avg + " day(s),");
-                System.out.println("   your next expected purchase date is ≈ " + next + ".");
-            }
-        } catch (Exception e) {
-            System.out.println("⚠ SmartShopping prediction unavailable: " + e.getMessage());
+
+        // 🔔 Show Smart Reminders & Inactivity Messages
+        System.out.println("\n----------- 🔔 Smart Reminders -----------");
+        List<String> reminders = SmartShoppingSystem.getSmartReminders(User.getCurrentUser().getUserId());
+        if (reminders.isEmpty()) {
+            System.out.println("No reminders right now.");
+        } else {
+            reminders.forEach(System.out::println);
         }
 
+        System.out.println("\n----------- ⚠️ Inactivity Alerts -----------");
+        List<String> inactivity = SmartShoppingSystem.inactivityMessagesForAllProducts(User.getCurrentUser().getUserId());
+        if (inactivity.isEmpty()) {
+            System.out.println("No inactivity alerts.");
+        } else {
+            inactivity.forEach(System.out::println);
+        }
     }
-
 
 
     public static void start() throws Exception {
@@ -1904,10 +1785,11 @@ public class CustomerManagement extends User {
             System.out.println("5. 📦 My Orders");
             System.out.println("6. ⚡ Process Order");
             System.out.println("7. 👁️ View Orders (Oldest → Latest)");
-            System.out.println("8. ↩️ Undo Last Order");
-            System.out.println("9. 🔄 View Orders (Latest → Oldest)");
-            System.out.println("10. 🚪 Logout / Exit");
-            System.out.print("\nChoose an option (1-10): ");
+            System.out.println("8. 🔄 View Orders (Latest → Oldest)");
+            System.out.println("9. ↩️ Undo Last Order");
+            System.out.println("10. 🧾 Download Invoice");
+            System.out.println("11. 🚪 Logout / Exit");
+            System.out.print("\nChoose an option (1-11): ");
 
             int choice = sc.nextInt();
             sc.nextLine(); // consume newline
@@ -1938,12 +1820,15 @@ public class CustomerManagement extends User {
                         orderList.display();
                         break;
                     case 8:
-                        orderList.cancelLastOrder(); // ✅ renamed to match DLL method
-                        break;
-                    case 9:
                         orderList.reverseDisplay();
                         break;
+                    case 9:
+                        orderList.cancelLastOrder(); // ✅ renamed to match DLL method
+                        break;
                     case 10:
+                        downloadInvoice();
+                        break;
+                    case 11:
                         System.out.println("👋 Thank you for visiting! Goodbye.");
                         Auth.logincount++;
                         Auth.sessionOrderId = null; // reset session

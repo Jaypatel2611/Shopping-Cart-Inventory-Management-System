@@ -1,14 +1,36 @@
 import Database.Database;
 import Modules.Auth.Auth;
 import Modules.Users.AdminManagement.AdminManagement;
+import Modules.Users.CustomerManagement.CustomerManagement;
 import Modules.Users.User;
+import Modules.Utils.SmartShoppingSystem;
 
 import java.sql.PreparedStatement;
+import java.util.List;
 import java.util.Scanner;
 
 public class Main {
+    private static void showSmartReminders(int userId) {
+        try {
+            List<String> reminders = SmartShoppingSystem.getSmartReminders(userId);
+
+            if (reminders.isEmpty()) {
+                System.out.println("✅ No pending reminders. You're all caught up!");
+            } else {
+                System.out.println("\n--- 📌 Smart Shopping Suggestions ---");
+                for (String msg : reminders) {
+                    System.out.println(msg);
+                }
+                System.out.println("------------------------------------\n");
+            }
+
+        } catch (Exception e) {
+            System.out.println("⚠️ Could not fetch smart reminders: " + e.getMessage());
+        }
+    }
+
     public static void main(String[] args) throws Exception {
-        String billTable = "create table if not exists bills(bill_id int auto_increment primary key,customer_id int references users(user_id),bill_date date references orders(order_date),bill longblob)";
+        String billTable = "create table if not exists bills(bill_id int auto_increment primary key,customer_id int references users(user_id),bill_date date references orders(order_date),bill longblob,total_amount double)";
         PreparedStatement ps = Database.getCon().prepareStatement(billTable);
         ps.executeUpdate();
         Scanner sc = new Scanner(System.in);
@@ -33,29 +55,30 @@ public class Main {
                         System.out.println("🔓 Login selected.");
                         int userId = auth.userLogin();
 
-                        if (User.getCurrentUser().getUserId() != 0) {
+                        if (userId != 0) {
                             if (User.getCurrentUser().getRole().equalsIgnoreCase("admin")) {
                                 try {
+                                    System.out.println("✅ Login successful! Welcome " + User.getCurrentUser().getUserName());
                                     AdminManagement.main(args);
                                 } catch (Exception e) {
                                     throw new RuntimeException(e);
                                 }
                             } else {
-                                // CustomerManagement.start(User.getUserById(userId));
+                                try {
+                                    System.out.println("✅ Login successful! Welcome " + User.getCurrentUser().getUserName());
+                                    // 🔔 Show smart reminders after login
+                                    showSmartReminders(userId);
+                                    CustomerManagement.start();
+                                } catch (Exception e) {
+                                    throw new RuntimeException(e);
+                                }
                             }
                         } else {
                             System.out.println("❌ Login failed. Invalid credentials.");
                         }
-
-                        /* TODO : add logic for multiple user login and role management
-                           User user = auth.getUser();
-                        if (user != null) {
-                            CustomerManagement.start(auth.getUser());
-                        }*/
                         break;
                     case 3:
                         System.out.println("👋 Exiting... Thank you for visiting!");
-                        //CustomerManagement customerManagement = new CustomerManagement();
 
                         System.exit(0);
                         break;

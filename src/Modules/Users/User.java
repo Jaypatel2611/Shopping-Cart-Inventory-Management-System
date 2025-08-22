@@ -52,10 +52,8 @@ public class User {
     public static void setCurrentUser(User loggeduser) {
         currentUser = loggeduser;
         loggedInUser.put(loggeduser.getUserId(), loggeduser);
-         try {
-            currentUser.stats = Modules.Utils.SmartShoppingSystem.buildStatsFromDb(Database.getCon(), loggeduser.getUserId());
-        } catch (Exception ignored) {}
     }
+
 
     public static User getCurrentUser() {
         return currentUser;
