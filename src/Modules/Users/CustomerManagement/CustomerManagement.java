@@ -34,7 +34,7 @@ public class CustomerManagement extends User {
 
     private static boolean isValidUPIID(String upi_id) {
         // Accepts emails like test@example.com
-        String UPIPattern = "^[\\w.-]+@[a-zA-Z\\d.-]+\\.[a-zA-Z]{2,}$";
+        String UPIPattern = "^[\\w.-]+@(oksbi|okicici|okaxis)$";
         return upi_id.matches(UPIPattern);
     }
 
@@ -1712,7 +1712,6 @@ public class CustomerManagement extends User {
                     }
                     System.out.println("✅ Proceeding to checkout...");
                     checkOut();
-                    // Thread.sleep(5000);
                     break;
                 case 2:
                     System.out.println("🔙 Returning to previous menu...");
@@ -1763,15 +1762,17 @@ public class CustomerManagement extends User {
             while (rs.next()) {
                 String name = rs.getString("name");
                 String address = rs.getString("address_line_2");
-                // String area = rs.getString("area");
+                String area = rs.getString("area");
                 String city = rs.getString("city");
                 String state = rs.getString("state");
                 int pincode = rs.getInt("pincode");
+
+
                 System.out.println("----------------------------------");
                 System.out.println("\n📦 Saved Address:");
                 System.out.println("Name           : " + name);
                 System.out.println("Address Line  : " + address);
-                // System.out.println("Area         : " + area);
+                System.out.println("Area         : " + area);
                 System.out.println("City           : " + city);
                 System.out.println("State          : " + state);
                 System.out.println("Pin Code       : " + pincode);
@@ -1793,11 +1794,6 @@ public class CustomerManagement extends User {
                 addAddress();
                 System.out.println("✅ Address Added Successfully");
             }
-        }
-        System.out.println("Do you want to see your order(yes/no)");
-        String ans = sc.next().toLowerCase();
-        if (ans.equals("yes")) {
-            viewOrders();
         }
     }
 
