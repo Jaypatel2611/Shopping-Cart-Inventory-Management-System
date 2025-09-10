@@ -1,6 +1,7 @@
 package Modules.Utils;
 
 import Database.Database;
+import Modules.Users.User;
 
 import java.awt.dnd.DropTarget;
 import java.sql.*;
@@ -74,43 +75,6 @@ public class SmartShoppingSystem {
         return reminders;
     }
 
-    public static List<String> inactivityMessagesForAllProducts(int userId) throws Exception {
-        String sql = "SELECT product_name, MAX(order_date) AS last_date " +
-                "FROM orders WHERE user_id = ? GROUP BY product_name";
-
-        // store product + inactivity days
-        List<Map.Entry<String, Long>> inactivityList = new ArrayList<>();
-
-        try (PreparedStatement ps = Database.getCon().prepareStatement(sql)) {
-            ps.setInt(1, userId);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    String product = rs.getString("product_name");
-                    Date lastDate = rs.getDate("last_date");
-
-                    if (lastDate != null) {
-                        LocalDate last = lastDate.toLocalDate();
-                        long days = ChronoUnit.DAYS.between(last, LocalDate.now());
-                        if (days > 7) { // only consider products not bought for more than a week
-                            inactivityList.add(Map.entry(product, days));
-                        }
-                    }
-                }
-            }
-        }
-
-        // sort by inactivity days (descending)
-        inactivityList.sort((a, b) -> Long.compare(b.getValue(), a.getValue()));
-
-        // pick top 3
-        List<String> messages = new ArrayList<>();
-        for (int i = 0; i < Math.min(3, inactivityList.size()); i++) {
-            Map.Entry<String, Long> entry = inactivityList.get(i);
-            messages.add("⚠️ You have not ordered " + entry.getKey() + " for " + entry.getValue() + " days.");
-//                System.out.println(messages);
-        }
-        return messages;
-    }
 
     // -------- Inner class to hold purchase history --------
     public static class Stats {
@@ -152,70 +116,57 @@ public class SmartShoppingSystem {
             long millis = next.longValue() * 24L * 60L * 60L * 1000L;
             return Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate();
         }
-
-        public static boolean isInactiveForLong() {
-            Integer nextDay = predictNextDay();
-            if (nextDay == null) return false;
-
-            int today = (int) (System.currentTimeMillis() / (1000 * 60 * 60 * 24));
-            int avg = getAvgInterval();
-
-            // If user has not purchased for more than 2 × avg interval, mark inactive
-            return today > (nextDay + avg);
-        }
-
-        public static List<String> inactivityMessagesForAllProducts(Connection con, int userId) throws Exception {
-            String sql = "SELECT product_name, COUNT(*) AS order_count, MAX(order_date) AS last_date " +
-                    "FROM orders WHERE user_id = ? GROUP BY product_name";
-
-            // store product + inactivity days
-            List<Map.Entry<String, Long>> inactivityList = new ArrayList<>();
-
-            try (PreparedStatement ps = con.prepareStatement(sql)) {
-                ps.setInt(1, userId);
-                try (ResultSet rs = ps.executeQuery()) {
-                    while (rs.next()) {
-                        String product = rs.getString("product_name");
-                        int orderCount = rs.getInt("order_count");
-                        Date lastDate = rs.getDate("last_date");
-
-                        if (orderCount >= 3 && lastDate != null) {  // ✅ must be ordered at least 3 times
-                            LocalDate last = lastDate.toLocalDate();
-                            long days = ChronoUnit.DAYS.between(last, LocalDate.now());
-
-                            if (days > 7) { // only consider products not bought for more than a week
-                                inactivityList.add(Map.entry(product, days));
-                            }
-                        }
-                    }
-                }
-            }
-
-            // sort by inactivity days (descending)
-            inactivityList.sort((a, b) -> Long.compare(b.getValue(), a.getValue()));
-
-            // pick top 3
-            List<String> messages = new ArrayList<>();
-            for (int i = 0; i < Math.min(3, inactivityList.size()); i++) {
-                Map.Entry<String, Long> entry = inactivityList.get(i);
-                messages.add("⚠️ You have not ordered " + entry.getKey() + " for " + entry.getValue() + " days.");
-            }
-            return messages;
-        }
     }
 
-    /** Build Stats for a user by scanning their orders in chronological order. */
-    public static Stats buildStatsFromDb(Connection con, int userId) throws SQLException {
-        String sql = "SELECT order_date FROM orders WHERE user_id = ? ORDER BY order_date ASC";
-        try (PreparedStatement ps = con.prepareStatement(sql)) {
+    // -------- New Inactivity Alert Logic (based on average gap) --------
+    public static List<String> smartInactivityAlerts(int userId) throws Exception {
+        String sql = "SELECT product_name, order_date FROM orders " +
+                "WHERE user_id = ? ORDER BY product_name, order_date ASC";
+
+        Map<String, List<LocalDate>> productOrders = new HashMap<>();
+
+        // Collect all orders grouped by product
+        try (PreparedStatement ps = Database.getCon().prepareStatement(sql)) {
             ps.setInt(1, userId);
             try (ResultSet rs = ps.executeQuery()) {
-                Stats s = new Stats();
                 while (rs.next()) {
-                    s.addPurchase(rs.getTimestamp(1));
+                    String product = rs.getString("product_name");
+                    LocalDate date = rs.getDate("order_date").toLocalDate();
+                    productOrders.computeIfAbsent(product, k -> new ArrayList<>()).add(date);
                 }
-                return s;
             }
         }
+
+        List<String> alerts = new ArrayList<>();
+        LocalDate today = LocalDate.now();
+
+        for (Map.Entry<String, List<LocalDate>> entry : productOrders.entrySet()) {
+            String product = entry.getKey();
+            List<LocalDate> orderHistory = entry.getValue();
+
+            if (orderHistory.size() < 2) continue; // not enough history
+
+            // Calculate average gap for this product
+            long totalGap = 0;
+            for (int i = 1; i < orderHistory.size(); i++) {
+                totalGap += ChronoUnit.DAYS.between(orderHistory.get(i - 1), orderHistory.get(i));
+            }
+            long avgGap = totalGap / (orderHistory.size() - 1);
+
+            LocalDate lastOrder = orderHistory.get(orderHistory.size() - 1);
+            LocalDate expectedNext = lastOrder.plusDays(avgGap);
+
+            // Allow ±1 day tolerance
+            LocalDate maxExpected = expectedNext.plusDays(1);
+
+            if (today.isAfter(maxExpected)) {
+                alerts.add("⚠️ You usually buy " + product +
+                        " every ~" + avgGap + " days. Last bought on " + lastOrder +
+                        ", but no order since then!");
+            }
+        }
+
+        return alerts;
     }
+
 }

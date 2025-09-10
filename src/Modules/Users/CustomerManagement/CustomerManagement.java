@@ -38,11 +38,11 @@ public class CustomerManagement extends User {
         return upi_id.matches(UPIPattern);
     }
 
-    public static boolean isValidFirstName(String name) {
+    private static boolean isValidFirstName(String name) {
         return name.matches("[a-zA-Z]+");
     }
 
-    public static boolean isValidLastName(String name) {
+    private static boolean isValidLastName(String name) {
         return name.matches("[a-zA-Z]+");
     }
 
@@ -58,6 +58,16 @@ public class CustomerManagement extends User {
     private static boolean isValidPassword(String password) {
         String pattern = "^(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*()_+\\-={}:;\"'<>?,./]).{8,}$";
         return password.matches(pattern);
+    }
+
+    public static void checkInactivityAlerts() throws Exception {
+        List<String> alerts = SmartShoppingSystem.smartInactivityAlerts(User.getCurrentUser().getUserId());
+        if(!alerts.isEmpty()) {
+            System.out.println("\n----------- ⚠️ Inactivity Alerts -----------");
+            for (String msg : alerts) {
+                System.out.println(msg);
+            }
+        }
     }
 
     public static void addAddress() throws Exception {
@@ -321,6 +331,8 @@ public class CustomerManagement extends User {
                         ps1.setInt(5, quantity);
                         ps1.setInt(6, User.getCurrentUser().getUserId());
                         ps1.executeUpdate();
+
+                        System.out.println("✅ Product Added to Cart");
                     } else {
                         System.out.println("not founded");
                     }
@@ -1549,8 +1561,7 @@ public class CustomerManagement extends User {
                     PreparedStatement ps = Database.getCon().prepareStatement(fetchQuantity);
                     ps.setInt(1, pid);
                     ResultSet crs = ps.executeQuery();
-//                    System.out.println();
-//                    boolean b = false;
+//
                     while (crs.next()) {
 //                        System.out.println();
                         if (crs.getInt("quantity") >= cquantity) {
@@ -1589,7 +1600,6 @@ public class CustomerManagement extends User {
                                 } catch (Exception ignored) {}
 
                                 orders = new ArrayList<>();
-                                System.out.println(orders);
                                 int currentDay = 0;
                                 String select = "select order_date from orders where user_id = ? order by order_id desc limit 1";
                                 PreparedStatement ps10 = Database.getCon().prepareStatement(select);
@@ -1599,16 +1609,6 @@ public class CustomerManagement extends User {
                                     Date orderDate = rsOrder1.getDate(1); // works for TIMESTAMP
                                     currentDay = (int) (orderDate.getTime() / (1000 * 60 * 60 * 24));
                                 }
-
-
-                                // int currentDay = (int) (System.currentTimeMillis() / (1000*60*60*24)); // day counter
-//                                SmartShoppingSystem.recordPurchase(User.getCurrentUser().getUserId(), rs.getInt("product_id"), currentDay);
-//
-//                                // === Show prediction to user ===
-//                                String suggestion = SmartShoppingSystem.predict(User.getCurrentUser().getUserId(), rs.getInt("product_id"), currentDay);
-//                                if (!suggestion.isEmpty()) {
-//                                    System.out.println(suggestion);
-//                                }
 
                                 String delete = "delete from cart where product_id = ?";
                                 PreparedStatement ps6 = Database.getCon().prepareStatement(delete);
@@ -1683,12 +1683,14 @@ public class CustomerManagement extends User {
                                                 writer.close();
 
 
-                                                String join = "select users.user_id,orders.order_date from users inner join orders on users.user_id = orders.user_id";
+                                                String join = "select users.user_id,orders.order_date from users inner join " +
+                                                        "orders on users.user_id = orders.user_id where users.user_id = ? order by orders.order_date desc limit 1";
                                                 PreparedStatement ps1 = Database.getCon().prepareStatement(join);
+                                                ps1.setInt(1, User.getCurrentUser().getUserId());
                                                 ResultSet rs1 = ps1.executeQuery();
-                                                while (rs1.next()) {
-                                                    String insertbill = "Insert into bills(user_id,bill_date,bill,total_amount) values(?,?,?,?)";
-                                                    PreparedStatement ps2 = Database.getCon().prepareStatement(insertbill);
+                                                if (rs1.next()) {
+                                                    String insertBill = "Insert into bills(user_id,bill_date,bill,total_amount) values(?,?,?,?)";
+                                                    PreparedStatement ps2 = Database.getCon().prepareStatement(insertBill);
                                                     ps2.setInt(1, rs1.getInt(1));
                                                     ps2.setDate(2, rs1.getDate(2));
                                                     FileInputStream fis = new FileInputStream(orderPath);
@@ -1697,7 +1699,6 @@ public class CustomerManagement extends User {
                                                     ps2.setDouble(4,grandTotal);
                                                     ps2.executeUpdate();
                                                     fis.close();
-
                                                 }
                                             }
                                             orders.removeAll(orders);
@@ -1897,13 +1898,8 @@ public class CustomerManagement extends User {
             reminders.forEach(System.out::println);
         }
 
-        System.out.println("\n----------- ⚠️ Inactivity Alerts -----------");
-        List<String> inactivity = SmartShoppingSystem.inactivityMessagesForAllProducts(User.getCurrentUser().getUserId());
-        if (inactivity.isEmpty()) {
-            System.out.println("No inactivity alerts.");
-        } else {
-            inactivity.forEach(System.out::println);
-        }
+        // ⚠️ Inactivity Alerts
+        checkInactivityAlerts();
     }
 
 

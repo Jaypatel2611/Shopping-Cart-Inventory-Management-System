@@ -9,6 +9,8 @@ import java.sql.PreparedStatement;
 import java.util.List;
 import java.util.Scanner;
 
+import static Modules.Users.CustomerManagement.CustomerManagement.checkInactivityAlerts;
+
 public class Main {
     private static void showSmartReminders(int userId) {
         try {
@@ -66,8 +68,9 @@ public class Main {
                             } else {
                                 try {
                                     System.out.println("✅ Login successful! Welcome " + User.getCurrentUser().getUserName());
-                                    // 🔔 Show smart reminders after login
+                                    // 🔔 Show smart reminders and ⚠️ Inactivity Alerts after login
                                     showSmartReminders(userId);
+                                    checkInactivityAlerts();
                                     CustomerManagement.start();
                                 } catch (Exception e) {
                                     throw new RuntimeException(e);
