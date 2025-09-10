@@ -67,7 +67,7 @@ public class SmartShoppingSystem {
             if (!today.isBefore(predictedNext)) {
                 reminders.add("🔔 You usually order " + product + " every " + avg +
                         " days. Last bought on " + lastPurchase +
-                        ". You should order again around " + predictedNext + ".");
+                        ". You should order again .");
             }
         }
 

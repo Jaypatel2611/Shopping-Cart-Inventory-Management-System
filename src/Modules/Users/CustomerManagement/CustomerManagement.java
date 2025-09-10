@@ -1537,43 +1537,183 @@ public class CustomerManagement extends User {
             System.out.print("Enter Choice : ");
 
             int choice = sc.nextInt();
+
             switch (choice) {
                 case 1:
-                    // ✅ Place order for all cart items
-                    rs.beforeFirst(); // reset cursor
-                    while (rs.next()) {
-                        int pid = rs.getInt("product_id");
-                        String pname = rs.getString("product_name");
-                        int qty = rs.getInt("quantity");
-                        double price = rs.getDouble("price");
-                        double tprice = price * qty;
 
-                        String placingOrder = "INSERT INTO orders " +
-                                "(product_id, product_name, quantity, price, total_price, order_date, user_id) " +
-                                "VALUES (?, ?, ?, ?, ?, ?, ?)";
-
-                        try (PreparedStatement p = Database.getCon().prepareStatement(placingOrder)) {
-                            p.setInt(1, pid);
-                            p.setString(2, pname);
-                            p.setInt(3, qty);
-                            p.setDouble(4, price);
-                            p.setDouble(5, tprice);
-                            p.setTimestamp(6, new java.sql.Timestamp(System.currentTimeMillis()));
-                            p.setInt(7, User.getCurrentUser().getUserId());
-                            p.executeUpdate();
-                        }
-
-                        // Remove from cart after ordering
-                        String delete = "DELETE FROM cart WHERE product_id = ?";
-                        try (PreparedStatement del = Database.getCon().prepareStatement(delete)) {
-                            del.setInt(1, pid);
-                            del.executeUpdate();
+                    System.out.print("Enter Product ID to be ordered: ");
+                    int pid = sc.nextInt();
+                    System.out.print("Enter Quantity to be ordered : ");
+                    int cquantity = sc.nextInt();
+                    String fetchQuantity = "select quantity from cart where product_id = ?";
+                    PreparedStatement ps = Database.getCon().prepareStatement(fetchQuantity);
+                    ps.setInt(1, pid);
+                    ResultSet crs = ps.executeQuery();
+//                    System.out.println();
+//                    boolean b = false;
+                    while (crs.next()) {
+//                        System.out.println();
+                        if (crs.getInt("quantity") >= cquantity) {
+                            payment(pid, cquantity);
+                        } else {
+                            System.out.println("Your cart item has not enough quantity!");
+                            viewCart();
                         }
                     }
 
-                    System.out.println("✅ Order placed successfully!");
-                    break;
 
+                    // Move cursor to start
+                    rs.beforeFirst();
+                    ArrayList<Order> orders;
+
+                    while (rs.next()) {
+                        if (rs.getInt("product_id") == pid) {
+                            double tprice = rs.getDouble("price") * rs.getInt("quantity");
+
+                            String placingOrder = "INSERT INTO orders " +
+                                    "(product_id, product_name, quantity, price, total_price, order_date,user_id) " +
+                                    "VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+                            try (PreparedStatement p = Database.getCon().prepareStatement(placingOrder, Statement.RETURN_GENERATED_KEYS)) {
+                                p.setInt(1, rs.getInt("product_id"));
+                                p.setString(2, rs.getString("product_name"));
+                                p.setInt(3, rs.getInt("quantity"));
+                                p.setDouble(4, rs.getDouble("price"));
+                                p.setDouble(5, tprice);
+                                p.setTimestamp(6, new java.sql.Timestamp(System.currentTimeMillis()));
+                                p.setInt(7, User.getCurrentUser().getUserId());
+                                p.executeUpdate();
+                                try {
+                                    // update in-memory user stats immediately (optional)
+                                    User.getCurrentUser().getStats().addPurchase(new java.sql.Timestamp(System.currentTimeMillis()));
+                                } catch (Exception ignored) {}
+
+                                orders = new ArrayList<>();
+                                System.out.println(orders);
+                                int currentDay = 0;
+                                String select = "select order_date from orders where user_id = ? order by order_id desc limit 1";
+                                PreparedStatement ps10 = Database.getCon().prepareStatement(select);
+                                ps10.setInt(1,User.getCurrentUser().getUserId());
+                                ResultSet rsOrder1 = ps10.executeQuery();
+                                if (rsOrder1.next()) {
+                                    Date orderDate = rsOrder1.getDate(1); // works for TIMESTAMP
+                                    currentDay = (int) (orderDate.getTime() / (1000 * 60 * 60 * 24));
+                                }
+
+
+                                // int currentDay = (int) (System.currentTimeMillis() / (1000*60*60*24)); // day counter
+//                                SmartShoppingSystem.recordPurchase(User.getCurrentUser().getUserId(), rs.getInt("product_id"), currentDay);
+//
+//                                // === Show prediction to user ===
+//                                String suggestion = SmartShoppingSystem.predict(User.getCurrentUser().getUserId(), rs.getInt("product_id"), currentDay);
+//                                if (!suggestion.isEmpty()) {
+//                                    System.out.println(suggestion);
+//                                }
+
+                                String delete = "delete from cart where product_id = ?";
+                                PreparedStatement ps6 = Database.getCon().prepareStatement(delete);
+                                ps6.setInt(1, rs.getInt("product_id"));
+                                ps6.executeUpdate();
+                                OrderProcessor or = new OrderProcessor();
+                                ResultSet genKeys = p.getGeneratedKeys();
+                                if (genKeys.next()) {
+                                    int orderId = genKeys.getInt(1);
+
+                                    // ✅ Now fetch the order_date for this specific order
+                                    String orderFetch = "SELECT order_date FROM orders WHERE order_id = ?";
+                                    PreparedStatement pf = Database.getCon().prepareStatement(orderFetch);
+                                    pf.setInt(1, orderId);
+                                    ResultSet rsf = pf.executeQuery();
+
+                                    if (rsf.next()) {
+                                        orders.add(new Order(
+                                                rs.getString("product_name"),
+                                                User.getCurrentUser().getUserId(),
+                                                orderId,
+                                                rs.getInt("product_id"),
+                                                rs.getInt("quantity"),
+                                                tprice,
+                                                rsf.getDate("order_date")
+                                        ));
+
+                                        System.out.println("do you want to order more(yes/no)");
+                                        String ans1 = sc.next().toLowerCase();
+
+                                        if (ans1.equals("yes")) {
+                                            viewCart();
+                                        } else if (ans1.equals("no")) {
+                                            //FileWriter for bill generation
+                                            System.out.println("✅ Order placed successfully!");
+                                            String users = "select first_name,user_id from users where user_id = ?";
+                                            PreparedStatement ps3 = Database.getCon().prepareStatement(users);
+                                            ps3.setInt(1, User.getCurrentUser().getUserId());
+                                            ResultSet rs3 = ps3.executeQuery();
+
+                                            if (rs3.next()) {
+                                                String name = rs3.getString(1);
+                                                String orders1 = "select * from orders where user_id = ? ";
+                                                PreparedStatement ps4 = Database.getCon().prepareStatement(orders1);
+                                                ps4.setInt(1, User.getCurrentUser().getUserId());
+                                                ResultSet rsOrder = ps4.executeQuery();
+                                                String orderPath = saveTicketFile(Auth.sessionOrderId);
+                                                FileWriter writer = new FileWriter(orderPath, true);
+
+                                                double grandTotal = 0 ;
+
+                                                // FileWriter writer = new FileWriter(orderPath);
+                                                writer.write("Orders for " + name + ":\n");
+                                                writer.write("--------------------------------------------------------------------------------\n");
+                                                writer.write(String.format("%-10s %-12s %-20s %-8s %-12s %-15s\n",
+                                                        "OrderID", "ProductID", "ProductName", "Qty", "TotalPrice", "Date"));
+                                                writer.write("---------------------------------------------------------------------------------\n");
+
+                                                for (Order order : orders) {
+                                                    writer.write(String.format("%-10d %-12d %-20s %-8d %-12.2f %-15s\n",
+                                                            order.order_id,
+                                                            order.product_id,
+                                                            order.product_name,
+                                                            order.quantity,
+                                                            order.total_price,
+                                                            order.order_date.toString()
+                                                    ));
+                                                    grandTotal += order.total_price;
+                                                }
+
+                                                writer.flush();
+                                                writer.close();
+
+
+                                                String join = "select users.user_id,orders.order_date from users inner join orders on users.user_id = orders.user_id";
+                                                PreparedStatement ps1 = Database.getCon().prepareStatement(join);
+                                                ResultSet rs1 = ps1.executeQuery();
+                                                while (rs1.next()) {
+                                                    String insertbill = "Insert into bills(user_id,bill_date,bill,total_amount) values(?,?,?,?)";
+                                                    PreparedStatement ps2 = Database.getCon().prepareStatement(insertbill);
+                                                    ps2.setInt(1, rs1.getInt(1));
+                                                    ps2.setDate(2, rs1.getDate(2));
+                                                    FileInputStream fis = new FileInputStream(orderPath);
+
+                                                    ps2.setBlob(3, fis);
+                                                    ps2.setDouble(4,grandTotal);
+                                                    ps2.executeUpdate();
+                                                    fis.close();
+
+                                                }
+                                            }
+                                            orders.removeAll(orders);
+                                            break;
+                                        } else {
+                                            System.out.println("Invalid choice");
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    System.out.println("✅ Proceeding to checkout...");
+                    checkOut();
+                    // Thread.sleep(5000);
+                    break;
                 case 2:
                     System.out.println("🔙 Returning to previous menu...");
                     break;
